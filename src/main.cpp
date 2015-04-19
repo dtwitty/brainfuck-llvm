@@ -68,7 +68,7 @@ int main(int argc, char* argv[]) {
   Module* module = new Module("bfcode", getGlobalContext());
   Statement* prog = Parse(source_file);
   // TODO: better memory management - preferably allocate vector
-  Function* func = BuildProgram(prog, module, 10000);
+  Function* func = BuildProgram(prog, module, 100);
 
   if (optimize_flag) {
     legacy::FunctionPassManager pm(module);

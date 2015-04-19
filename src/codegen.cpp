@@ -1,11 +1,11 @@
 #include <stack>
 #include <cassert>
 
-#include "llvm/IR/Verifier.h"
-#include "llvm/IR/DerivedTypes.h"
-#include "llvm/IR/IRBuilder.h"
-#include "llvm/IR/LLVMContext.h"
-#include "llvm/IR/Module.h"
+#include <llvm/IR/Verifier.h>
+#include <llvm/IR/DerivedTypes.h>
+#include <llvm/IR/IRBuilder.h>
+#include <llvm/IR/LLVMContext.h>
+#include <llvm/IR/Module.h>
 
 #include "parser.h"
 #include "codegen.h"
@@ -107,38 +107,37 @@ void CodeGenVisitor::Visit(Output& s) {
 
 void CodeGenVisitor::Visit(BFLoop& s) {
   // Create basic blocks for condition, body, and after
-  BasicBlock* cond_block = BasicBlock::Create(getGlobalContext(), "", _main);
   BasicBlock* body_block = BasicBlock::Create(getGlobalContext(), "", _main);
-  BasicBlock* next_block = BasicBlock::Create(getGlobalContext(), "", _main);
+  BasicBlock* post_block = BasicBlock::Create(getGlobalContext(), "", _main);
 
   // Make builders for each block
   IRBuilder<> curr_builder = _builders.top();
-  IRBuilder<> cond_builder(cond_block);
   IRBuilder<> body_builder(body_block);
-  IRBuilder<> next_builder(next_block);
+  IRBuilder<> post_builder(post_block);
 
   BasicBlock* curr_block = curr_builder.GetInsertBlock();
 
-  // Unconditionally jump to the condition block
-  curr_builder.CreateBr(cond_block);
+  // Conditionally jump into the body or to the post block
+  Value* ptr_value = curr_builder.CreateLoad(_ptr);
+  Value* cond = curr_builder.CreateIsNotNull(ptr_value);
+  curr_builder.CreateCondBr(cond, body_block, post_block);
 
   // Current block is now done
   _builders.pop();
 
-  // Create a phi node in the condition
-  PHINode* cond_phi = cond_builder.CreatePHI(STORE_TYPE, 2);
-  cond_phi->addIncoming(_ptr, curr_block);
+  // Create a phi node in the body for the ptr
+  PHINode* body_phi = body_builder.CreatePHI(STORE_TYPE, 2);
+  body_phi->addIncoming(_ptr, curr_block);
 
-  // Create a branch at the condition block
-  Value* ptr_value = cond_builder.CreateLoad(cond_phi);
-  Value* cond = cond_builder.CreateIsNotNull(ptr_value);
-  cond_builder.CreateCondBr(cond, body_block, next_block);
-
+  // Create a phi node in the post block for the ptr
+  PHINode* post_phi = post_builder.CreatePHI(STORE_TYPE, 2);
+  post_phi->addIncoming(_ptr, curr_block);
+   
   // Set the loop body as our current block
   _builders.push(body_builder);
 
   // Set the pointer in the body to the phi node
-  _ptr = body_builder.CreateGEP(cond_phi, zero);
+  _ptr = body_phi;
 
   // Process the loop body
   s.GetBody()->Accept(*this);
@@ -147,20 +146,23 @@ void CodeGenVisitor::Visit(BFLoop& s) {
   IRBuilder<> new_body_builder = _builders.top();
   BasicBlock* new_body_block = new_body_builder.GetInsertBlock();
 
-  // Add an unconditional jump at the end of the body back to the condition
-  new_body_builder.CreateBr(cond_block);
+  // Create a conditional branch to restart the loop
+  ptr_value = new_body_builder.CreateLoad(_ptr);
+  cond = new_body_builder.CreateIsNotNull(ptr_value);
+  new_body_builder.CreateCondBr(cond, body_block, post_block);
 
-  // Update the conditional phi node
-  cond_phi->addIncoming(_ptr, new_body_block);
+  // Update phi nodes
+  body_phi->addIncoming(_ptr, new_body_block);
+  post_phi->addIncoming(_ptr, new_body_block); 
 
   // Body block is now done
   _builders.pop();
 
   // Set the block after the loop as the current block
-  _builders.push(next_builder);
+  _builders.push(post_builder);
 
   // Set the pointer to the phi node
-  _ptr = next_builder.CreateGEP(cond_phi, zero);
+  _ptr = post_phi; 
 
   // Visist the rest of the program
   VisitNextStatement(s);
