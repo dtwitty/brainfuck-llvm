@@ -21,6 +21,8 @@
 using namespace std;
 using namespace llvm;
 
+#define STORE_SIZE 10000
+
 void help(char* argv[]) {
   cerr << "Usage: " << argv[0] << " [options] file" << endl;
   cerr << "Compiles or interprets brainfuck file" << endl;
@@ -68,7 +70,7 @@ int main(int argc, char* argv[]) {
   Module* module = new Module("bfcode", getGlobalContext());
   Statement* prog = Parse(source_file);
   // TODO: better memory management - preferably allocate vector
-  Function* func = BuildProgram(prog, module, 100);
+  Function* func = BuildProgram(prog, module, STORE_SIZE);
 
   if (optimize_flag) {
     legacy::FunctionPassManager pm(module);
