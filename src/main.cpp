@@ -21,7 +21,7 @@
 using namespace std;
 using namespace llvm;
 
-#define STORE_SIZE 10000
+#define STORE_SIZE 10
 
 void help(char* argv[]) {
   cerr << "Usage: " << argv[0] << " [options] file" << endl;
@@ -74,7 +74,13 @@ int main(int argc, char* argv[]) {
 
   if (optimize_flag) {
     legacy::FunctionPassManager pm(module);
-    // TODO: Add optimization passes
+
+    pm.add(createInstructionCombiningPass());
+    pm.add(createLICMPass());
+    pm.add(createIndVarSimplifyPass());  
+    pm.add(createLoopDeletionPass());
+
+    pm.run(*func);
   }
 
   if (output_flag) {
@@ -88,7 +94,7 @@ int main(int argc, char* argv[]) {
     InitializeNativeTarget();
     std::string error;
     ExecutionEngine* engine =
-        EngineBuilder(module).setErrorStr(&error).create();
+      EngineBuilder(module).setErrorStr(&error).create();
 
     if (!engine) {
       cout << "Engine not created: " << error << endl;
