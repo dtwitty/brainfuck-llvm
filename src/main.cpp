@@ -79,7 +79,7 @@ int main(int argc, char* argv[]) {
     string error_str;
     llvm::sys::fs::OpenFlags flag(llvm::sys::fs::F_RW);
     raw_fd_ostream out_stream(output_file, error_str, flag);
-    WriteBitcodeToFile(module, out_stream);
+    module->print(out_stream, NULL);
   }
 
   if (interpret_flag) {
