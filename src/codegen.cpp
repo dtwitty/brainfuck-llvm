@@ -25,7 +25,7 @@ CodeGenVisitor::CodeGenVisitor(Module* module, int store_size) {
 
   // Define function for getting input
   _get_char =
-      cast<Function>(_module->getOrInsertFunction("getchar", CELL_TYPE, NULL));
+    cast<Function>(_module->getOrInsertFunction("getchar", CELL_TYPE, NULL));
   _get_char->setCallingConv(CallingConv::C);
 
   // Define function for printing
@@ -35,23 +35,21 @@ CodeGenVisitor::CodeGenVisitor(Module* module, int store_size) {
 
   // Define main function
   _main =
-      cast<Function>(_module->getOrInsertFunction("main", VOID_TYPE, NULL));
+    cast<Function>(_module->getOrInsertFunction("main", VOID_TYPE, NULL));
   _main->setCallingConv(CallingConv::C);
 
   // Push the main block onto a stack of loops
   IRBuilder<> builder(BasicBlock::Create(getGlobalContext(), "code", _main));
   _builders.push(builder);
 
+  Value* store_size_v = ConstantInt::get(INDEX_TYPE, store_size);
+
   // Allocate the data pointer, an array of size store_size
   _ptr =
-      builder.CreateAlloca(CELL_TYPE, ConstantInt::get(INDEX_TYPE, store_size));
+    builder.CreateAlloca(CELL_TYPE, store_size_v);
 
   // Zero-out the data array
-  Value* iter = _ptr;
-  for (int i = 0; i < store_size; i++) {
-    builder.CreateStore(zero, iter);
-    iter = builder.CreateGEP(iter, one);
-  }
+  builder.CreateMemSet(_ptr, zero, store_size, 0);
 }
 
 void CodeGenVisitor::VisitNextStatement(Statement& s) {
@@ -132,7 +130,7 @@ void CodeGenVisitor::Visit(BFLoop& s) {
   // Create a phi node in the post block for the ptr
   PHINode* post_phi = post_builder.CreatePHI(STORE_TYPE, 2);
   post_phi->addIncoming(_ptr, curr_block);
-   
+
   // Set the loop body as our current block
   _builders.push(body_builder);
 

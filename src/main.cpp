@@ -21,8 +21,6 @@
 using namespace std;
 using namespace llvm;
 
-#define STORE_SIZE 10
-
 void help(char* argv[]) {
   cerr << "Usage: " << argv[0] << " [options] file" << endl;
   cerr << "Compiles or interprets brainfuck file" << endl;
@@ -30,6 +28,7 @@ void help(char* argv[]) {
   cerr << "  -i          JIT compiles and runs the input file" << endl;
   cerr << "  -O          Apply optimizations (not implemented)" << endl;
   cerr << "  -o outfile  Outputs llvm code to outfile" << endl;
+  cerr << "  -s size     Set the size of the bf tape (default 10000)" << endl;
   cerr << "  -h          Displays this help message" << endl;
 }
 
@@ -38,10 +37,14 @@ int main(int argc, char* argv[]) {
   bool output_flag = false;
   bool optimize_flag = false;
   char* output_file;
+  unsigned store_size = 10000;
 
   char option_char;
-  while ((option_char = getopt(argc, argv, "iho:O")) != EOF) {
+  while ((option_char = getopt(argc, argv, "s:iho:O")) != EOF) {
     switch (option_char) {
+      case 's':
+        store_size = atoi(optarg);
+        break;
       case 'i':
         interpret_flag = true;
         break;
@@ -70,15 +73,16 @@ int main(int argc, char* argv[]) {
   Module* module = new Module("bfcode", getGlobalContext());
   Statement* prog = Parse(source_file);
   // TODO: better memory management - preferably allocate vector
-  Function* func = BuildProgram(prog, module, STORE_SIZE);
+  Function* func = BuildProgram(prog, module, store_size);
 
   if (optimize_flag) {
     legacy::FunctionPassManager pm(module);
 
+    pm.add(createVerifierPass());
     pm.add(createInstructionCombiningPass());
-    pm.add(createLICMPass());
     pm.add(createIndVarSimplifyPass());  
     pm.add(createLoopDeletionPass());
+    pm.add(createJumpThreadingPass());
 
     pm.run(*func);
   }
