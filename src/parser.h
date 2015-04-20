@@ -1,11 +1,9 @@
 #ifndef PARSER
 #define PARSER
 
-#include <istream>
-
 #include "lexer.h"
 
-class Statement;
+class ASTNode;
 class IncrPtr;
 class DecrPtr;
 class IncrData;
@@ -14,10 +12,10 @@ class GetInput;
 class Output;
 class BFLoop;
 
-class StatementVisitor {
+class ASTNodeVisitor {
  public:
-  virtual ~StatementVisitor() {}
-  virtual void Visit(Statement& s) = 0;
+  virtual ~ASTNodeVisitor() {}
+  virtual void Visit(ASTNode& s) = 0;
   virtual void Visit(IncrPtr& s) = 0;
   virtual void Visit(DecrPtr& s) = 0;
   virtual void Visit(IncrData& s) = 0;
@@ -27,71 +25,66 @@ class StatementVisitor {
   virtual void Visit(BFLoop& s) = 0;
 };
 
-class Statement {
+class ASTNode {
  public:
-  virtual ~Statement() {
+  virtual ~ASTNode() {
     if (_next) delete _next;
   }
-
-  Statement* GetNextStatement() { return _next; }
-
-  void SetNextStatement(Statement* next) { _next = next; }
-
-  virtual void Accept(StatementVisitor& Visitor) { Visitor.Visit(*this); }
+  ASTNode* GetNextASTNode() { return _next; }
+  void SetNextASTNode(ASTNode* next) { _next = next; }
+  virtual void Accept(ASTNodeVisitor& visitor) { visitor.Visit(*this); }
 
  private:
-  Statement* _next = NULL;
+  ASTNode* _next = NULL;
 };
 
-class IncrPtr : public Statement {
+class IncrPtr : public ASTNode {
  public:
   IncrPtr() {}
-  void Accept(StatementVisitor& Visitor) { Visitor.Visit(*this); }
+  void Accept(ASTNodeVisitor& visitor) { visitor.Visit(*this); }
 };
 
-class DecrPtr : public Statement {
+class DecrPtr : public ASTNode {
  public:
   DecrPtr() {}
-  void Accept(StatementVisitor& Visitor) { Visitor.Visit(*this); }
+  void Accept(ASTNodeVisitor& visitor) { visitor.Visit(*this); }
 };
 
-class IncrData : public Statement {
+class IncrData : public ASTNode {
  public:
   IncrData() {}
-  void Accept(StatementVisitor& Visitor) { Visitor.Visit(*this); }
+  void Accept(ASTNodeVisitor& visitor) { visitor.Visit(*this); }
 };
 
-class DecrData : public Statement {
+class DecrData : public ASTNode {
  public:
   DecrData() {}
-  void Accept(StatementVisitor& Visitor) { Visitor.Visit(*this); }
+  void Accept(ASTNodeVisitor& visitor) { visitor.Visit(*this); }
 };
 
-class GetInput : public Statement {
+class GetInput : public ASTNode {
  public:
   GetInput() {}
-  void Accept(StatementVisitor& Visitor) { Visitor.Visit(*this); }
+  void Accept(ASTNodeVisitor& visitor) { visitor.Visit(*this); }
 };
 
-class Output : public Statement {
+class Output : public ASTNode {
  public:
   Output() {}
-  void Accept(StatementVisitor& Visitor) { Visitor.Visit(*this); }
+  void Accept(ASTNodeVisitor& visitor) { visitor.Visit(*this); }
 };
 
-class BFLoop : public Statement {
+class BFLoop : public ASTNode {
  public:
   BFLoop() {}
-  void Accept(StatementVisitor& Visitor) { Visitor.Visit(*this); }
-
-  Statement* GetBody() { return _body; }
-
-  void SetBody(Statement* body) { _body = body; }
+  void Accept(ASTNodeVisitor& visitor) { visitor.Visit(*this); }
+  ASTNode* GetBody() { return _body; }
+  void SetBody(ASTNode* body) { _body = body; }
 
  private:
-  Statement* _body;
+  ASTNode* _body;
 };
 
-Statement* Parse(std::istream& input);
+ASTNode* Parse(std::istream& input);
 
 #endif  // PARSER

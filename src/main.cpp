@@ -16,7 +16,7 @@
 #include <llvm/Support/FileSystem.h>
 
 #include "parser.h"
-#include "codegen.h"
+#include "ast_codegen.h"
 
 using namespace std;
 using namespace llvm;
@@ -71,19 +71,30 @@ int main(int argc, char* argv[]) {
 
   ifstream source_file(argv[optind]);
   Module* module = new Module("bfcode", getGlobalContext());
-  Statement* prog = Parse(source_file);
+  ASTNode* prog = Parse(source_file);
   // TODO: better memory management - preferably allocate vector
   Function* func = BuildProgram(prog, module, store_size);
 
   if (optimize_flag) {
     legacy::FunctionPassManager pm(module);
 
-    pm.add(createVerifierPass());
-    pm.add(createInstructionCombiningPass());
-    pm.add(createIndVarSimplifyPass());  
-    pm.add(createLoopDeletionPass());
-    pm.add(createJumpThreadingPass());
+    // Eliminate simple loops such as [>>++<<-]
+    pm.add(createInstructionCombiningPass()); // Cleanup for scalarrepl.
+    pm.add(createLICMPass());                 // Hoist loop invariants
+    pm.add(createIndVarSimplifyPass());       // Canonicalize indvars
+    pm.add(createLoopDeletionPass());         // Delete dead loops
 
+    // Simplify code
+    for(int repeat=0; repeat < 3; repeat++)
+    {
+      pm.add(createGVNPass());                  // Remove redundancies
+      pm.add(createSCCPPass());                 // Constant prop with SCCP
+      pm.add(createCFGSimplificationPass());    // Merge & remove BBs
+      pm.add(createInstructionCombiningPass());
+      pm.add(createAggressiveDCEPass());        // Delete dead instructions
+      pm.add(createCFGSimplificationPass());    // Merge & remove BBs
+      pm.add(createDeadStoreEliminationPass()); // Delete dead stores
+    }
     pm.run(*func);
   }
 

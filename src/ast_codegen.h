@@ -11,10 +11,10 @@
 
 #include "parser.h"
 
-class CodeGenVisitor : public StatementVisitor {
+class CodeGenVisitor : public ASTNodeVisitor {
  public:
   CodeGenVisitor(llvm::Module* module, int store_size);
-  void Visit(Statement& s);
+  void Visit(ASTNode& s);
   void Visit(IncrPtr& s);
   void Visit(DecrPtr& s);
   void Visit(IncrData& s);
@@ -27,7 +27,7 @@ class CodeGenVisitor : public StatementVisitor {
   llvm::IRBuilder<> GetLastBuilder() { return _builders.top(); }
 
  private:
-  void VisitNextStatement(Statement& s);
+  void VisitNextASTNode(ASTNode& s);
   llvm::Module* _module;
   llvm::Value* _ptr;
   llvm::Function* _get_char;
@@ -36,7 +36,7 @@ class CodeGenVisitor : public StatementVisitor {
   std::stack<llvm::IRBuilder<>> _builders;
 };
 
-llvm::Function* BuildProgram(Statement* s, llvm::Module* module,
+llvm::Function* BuildProgram(ASTNode* s, llvm::Module* module,
                              int store_size);
 
 #endif  // CODEGEN

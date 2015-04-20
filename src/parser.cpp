@@ -10,51 +10,51 @@ void ParserError(const std::string& error) {
   exit(-1);
 }
 
-Statement* Parse(std::istream& input) {
+ASTNode* Parse(std::istream& input) {
   Token tok;
-  Statement* next, *loop_body, *first = new Statement();
+  ASTNode* next, *loop_body, *first = new ASTNode();
   BFLoop* next_loop;
-  std::stack<Statement*> blocks;
+  std::stack<ASTNode*> blocks;
   blocks.push(first);
 
   while ((tok = GetNextToken(input))) {
-    Statement* to_append = blocks.top();
+    ASTNode* to_append = blocks.top();
     switch (tok) {
       case INCR_PTR:
         next = new IncrPtr();
-        to_append->SetNextStatement(next);
+        to_append->SetNextASTNode(next);
         blocks.top() = next;
         break;
       case DECR_PTR:
         next = new DecrPtr();
-        to_append->SetNextStatement(next);
+        to_append->SetNextASTNode(next);
         blocks.top() = next;
         break;
       case INCR_DATA:
         next = new IncrData();
-        to_append->SetNextStatement(next);
+        to_append->SetNextASTNode(next);
         blocks.top() = next;
         break;
       case DECR_DATA:
         next = new DecrData();
-        to_append->SetNextStatement(next);
+        to_append->SetNextASTNode(next);
         blocks.top() = next;
         break;
       case INPUT_DATA:
         next = new GetInput();
-        to_append->SetNextStatement(next);
+        to_append->SetNextASTNode(next);
         blocks.top() = next;
         break;
       case OUTPUT_DATA:
         next = new Output();
-        to_append->SetNextStatement(next);
+        to_append->SetNextASTNode(next);
         blocks.top() = next;
         break;
       case START_LOOP:
         next_loop = new BFLoop();
-        to_append->SetNextStatement(next_loop);
+        to_append->SetNextASTNode(next_loop);
         blocks.top() = next_loop;
-        loop_body = new Statement();
+        loop_body = new ASTNode();
         blocks.push(loop_body);
         next_loop->SetBody(loop_body);
         break;

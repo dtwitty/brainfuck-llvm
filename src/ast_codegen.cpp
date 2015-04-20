@@ -8,7 +8,7 @@
 #include <llvm/IR/Module.h>
 
 #include "parser.h"
-#include "codegen.h"
+#include "ast_codegen.h"
 
 using namespace llvm;
 
@@ -52,25 +52,25 @@ CodeGenVisitor::CodeGenVisitor(Module* module, int store_size) {
   builder.CreateMemSet(_ptr, zero, store_size, 0);
 }
 
-void CodeGenVisitor::VisitNextStatement(Statement& s) {
-  Statement* next = s.GetNextStatement();
+void CodeGenVisitor::VisitNextASTNode(ASTNode& s) {
+  ASTNode* next = s.GetNextASTNode();
   if (next) {
     next->Accept(*this);
   }
 }
 
-void CodeGenVisitor::Visit(Statement& s) { VisitNextStatement(s); }
+void CodeGenVisitor::Visit(ASTNode& s) { VisitNextASTNode(s); }
 
 void CodeGenVisitor::Visit(IncrPtr& s) {
   IRBuilder<> builder = _builders.top();
   _ptr = builder.CreateGEP(_ptr, one);
-  VisitNextStatement(s);
+  VisitNextASTNode(s);
 }
 
 void CodeGenVisitor::Visit(DecrPtr& s) {
   IRBuilder<> builder = _builders.top();
   _ptr = builder.CreateGEP(_ptr, neg_one);
-  VisitNextStatement(s);
+  VisitNextASTNode(s);
 }
 
 void CodeGenVisitor::Visit(IncrData& s) {
@@ -78,7 +78,7 @@ void CodeGenVisitor::Visit(IncrData& s) {
   Value* ptr_val = builder.CreateLoad(_ptr);
   Value* result = builder.CreateAdd(ptr_val, one);
   builder.CreateStore(result, _ptr);
-  VisitNextStatement(s);
+  VisitNextASTNode(s);
 }
 
 void CodeGenVisitor::Visit(DecrData& s) {
@@ -86,21 +86,21 @@ void CodeGenVisitor::Visit(DecrData& s) {
   Value* ptr_val = builder.CreateLoad(_ptr);
   Value* result = builder.CreateAdd(ptr_val, neg_one);
   builder.CreateStore(result, _ptr);
-  VisitNextStatement(s);
+  VisitNextASTNode(s);
 }
 
 void CodeGenVisitor::Visit(GetInput& s) {
   IRBuilder<> builder = _builders.top();
   Value* input = builder.CreateCall(_get_char);
   builder.CreateStore(input, _ptr);
-  VisitNextStatement(s);
+  VisitNextASTNode(s);
 }
 
 void CodeGenVisitor::Visit(Output& s) {
   IRBuilder<> builder = _builders.top();
   Value* output = builder.CreateLoad(_ptr);
   builder.CreateCall(_put_char, output);
-  VisitNextStatement(s);
+  VisitNextASTNode(s);
 }
 
 void CodeGenVisitor::Visit(BFLoop& s) {
@@ -163,10 +163,10 @@ void CodeGenVisitor::Visit(BFLoop& s) {
   _ptr = post_phi; 
 
   // Visist the rest of the program
-  VisitNextStatement(s);
+  VisitNextASTNode(s);
 }
 
-Function* BuildProgram(Statement* s, llvm::Module* module, int store_size) {
+Function* BuildProgram(ASTNode* s, llvm::Module* module, int store_size) {
   CodeGenVisitor visitor(module, store_size);
   s->Accept(visitor);
   IRBuilder<> builder = visitor.GetLastBuilder();
