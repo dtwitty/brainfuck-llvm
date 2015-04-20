@@ -5,9 +5,9 @@
 
 class CNode;
 class CPtrMov;    // CPtrMov(x) -> ptr += x
-class CDataIAdd;  // CDataIAdd(off,x) -> M[ptr+off] += x
-class CDataIMul;  // CDataIMul(off,x,y) -> M[ptr+off+x] += M[ptr+off]*y
-class CDataISet;  // CDataISet(off,x) -> M[ptr+off] = x
+class CAdd;  // CAdd(off,x) -> M[ptr+off] += x
+class CMul;  // CMul(off,x,y) -> M[ptr+off+x] += M[ptr+off]*y
+class CSet;  // CSet(off,x) -> M[ptr+off] = x
 class CInput;     // CInput(off) -> M[ptr+off] = getchar()
 class COutput;    // COutput(off) -> putchar(M[ptr+off])
 class CLoop;      // CLoop(body) -> while(*ptr) {body}
@@ -17,9 +17,9 @@ class CNodeVisitor {
   virtual ~CNodeVisitor() {}
   virtual void Visit(CNode& n) = 0;
   virtual void Visit(CPtrMov& n) = 0;
-  virtual void Visit(CDataIAdd& n) = 0;
-  virtual void Visit(CDataIMul& n) = 0;
-  virtual void Visit(CDataISet& n) = 0;
+  virtual void Visit(CAdd& n) = 0;
+  virtual void Visit(CMul& n) = 0;
+  virtual void Visit(CSet& n) = 0;
   virtual void Visit(CInput& n) = 0;
   virtual void Visit(COutput& n) = 0;
   virtual void Visit(CLoop& n) = 0;
@@ -50,10 +50,10 @@ class CPtrMov : public CNode {
   int _amt = 0;
 };
 
-class CDataIAdd : public CNode {
+class CAdd : public CNode {
  public:
-  CDataIAdd() {}
-  CDataIAdd(int offset, int amt) {
+  CAdd() {}
+  CAdd(int offset, int amt) {
     _offset = offset;
     _amt = amt;
   }
@@ -68,10 +68,10 @@ class CDataIAdd : public CNode {
   int _amt = 0;
 };
 
-class CDataIMul : public CNode {
+class CMul : public CNode {
  public:
-  CDataIMul() {}
-  CDataIMul(int op_offset, int target_offset, int amt) {
+  CMul() {}
+  CMul(int op_offset, int target_offset, int amt) {
     _op_offset = op_offset;
     _target_offset = target_offset;
     _amt = amt;
@@ -90,10 +90,10 @@ class CDataIMul : public CNode {
   int _amt = 0;
 };
 
-class CDataISet : public CNode {
+class CSet : public CNode {
  public:
-  CDataISet() {}
-  CDataISet(int offset, int amt) {
+  CSet() {}
+  CSet(int offset, int amt) {
     _offset = offset;
     _amt = amt;
   }

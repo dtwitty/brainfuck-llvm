@@ -1,11 +1,14 @@
 #ifndef CANON_TRANSLATE
 #define CANON_TRANSLATE
 
+#include <stack>
+
 #include "parser.h"
 #include "canon_ir.h"
 
 class CanonTranslateVisitor : public ASTNodeVisitor {
- CanonTranslateVisitor();
+ public:
+  CanonTranslateVisitor();
   void Visit(ASTNode& s);
   void Visit(IncrPtr& s);
   void Visit(DecrPtr& s);
@@ -16,9 +19,14 @@ class CanonTranslateVisitor : public ASTNodeVisitor {
   void Visit(BFLoop& s);
 
   CNode* GetProgram();
+
+ private:
+  void VisitNextASTNode(ASTNode& s);
+  void AddSimpleStatement(CNode* n);
+  std::stack<CNode*> _blocks;
+  CNode* _start_node;
 };
 
 CNode* TranslateASTToCanonIR(ASTNode* s);
-
 
 #endif  // CANON_TRANSLATE
