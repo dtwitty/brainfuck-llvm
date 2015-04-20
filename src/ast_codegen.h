@@ -11,9 +11,9 @@
 
 #include "parser.h"
 
-class CodeGenVisitor : public ASTNodeVisitor {
+class ASTCodeGenVisitor : public ASTNodeVisitor {
  public:
-  CodeGenVisitor(llvm::Module* module, int store_size);
+  ASTCodeGenVisitor(llvm::Module* module, int store_size);
   void Visit(ASTNode& s);
   void Visit(IncrPtr& s);
   void Visit(DecrPtr& s);
@@ -36,7 +36,7 @@ class CodeGenVisitor : public ASTNodeVisitor {
   std::stack<llvm::IRBuilder<>> _builders;
 };
 
-llvm::Function* BuildProgram(ASTNode* s, llvm::Module* module,
+llvm::Function* BuildProgramFromAST(ASTNode* s, llvm::Module* module,
                              int store_size);
 
 #endif  // CODEGEN

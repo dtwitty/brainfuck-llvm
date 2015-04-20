@@ -20,7 +20,7 @@ static Value* zero = ConstantInt::get(CELL_TYPE, 0);
 static Value* one = ConstantInt::get(CELL_TYPE, 1);
 static Value* neg_one = ConstantInt::get(CELL_TYPE, -1);
 
-CodeGenVisitor::CodeGenVisitor(Module* module, int store_size) {
+ASTCodeGenVisitor::ASTCodeGenVisitor(Module* module, int store_size) {
   _module = module;
 
   // Define function for getting input
@@ -52,28 +52,28 @@ CodeGenVisitor::CodeGenVisitor(Module* module, int store_size) {
   builder.CreateMemSet(_ptr, zero, store_size, 0);
 }
 
-void CodeGenVisitor::VisitNextASTNode(ASTNode& s) {
+void ASTCodeGenVisitor::VisitNextASTNode(ASTNode& s) {
   ASTNode* next = s.GetNextASTNode();
   if (next) {
     next->Accept(*this);
   }
 }
 
-void CodeGenVisitor::Visit(ASTNode& s) { VisitNextASTNode(s); }
+void ASTCodeGenVisitor::Visit(ASTNode& s) { VisitNextASTNode(s); }
 
-void CodeGenVisitor::Visit(IncrPtr& s) {
+void ASTCodeGenVisitor::Visit(IncrPtr& s) {
   IRBuilder<> builder = _builders.top();
   _ptr = builder.CreateGEP(_ptr, one);
   VisitNextASTNode(s);
 }
 
-void CodeGenVisitor::Visit(DecrPtr& s) {
+void ASTCodeGenVisitor::Visit(DecrPtr& s) {
   IRBuilder<> builder = _builders.top();
   _ptr = builder.CreateGEP(_ptr, neg_one);
   VisitNextASTNode(s);
 }
 
-void CodeGenVisitor::Visit(IncrData& s) {
+void ASTCodeGenVisitor::Visit(IncrData& s) {
   IRBuilder<> builder = _builders.top();
   Value* ptr_val = builder.CreateLoad(_ptr);
   Value* result = builder.CreateAdd(ptr_val, one);
@@ -81,7 +81,7 @@ void CodeGenVisitor::Visit(IncrData& s) {
   VisitNextASTNode(s);
 }
 
-void CodeGenVisitor::Visit(DecrData& s) {
+void ASTCodeGenVisitor::Visit(DecrData& s) {
   IRBuilder<> builder = _builders.top();
   Value* ptr_val = builder.CreateLoad(_ptr);
   Value* result = builder.CreateAdd(ptr_val, neg_one);
@@ -89,21 +89,21 @@ void CodeGenVisitor::Visit(DecrData& s) {
   VisitNextASTNode(s);
 }
 
-void CodeGenVisitor::Visit(GetInput& s) {
+void ASTCodeGenVisitor::Visit(GetInput& s) {
   IRBuilder<> builder = _builders.top();
   Value* input = builder.CreateCall(_get_char);
   builder.CreateStore(input, _ptr);
   VisitNextASTNode(s);
 }
 
-void CodeGenVisitor::Visit(Output& s) {
+void ASTCodeGenVisitor::Visit(Output& s) {
   IRBuilder<> builder = _builders.top();
   Value* output = builder.CreateLoad(_ptr);
   builder.CreateCall(_put_char, output);
   VisitNextASTNode(s);
 }
 
-void CodeGenVisitor::Visit(BFLoop& s) {
+void ASTCodeGenVisitor::Visit(BFLoop& s) {
   // Create basic blocks for condition, body, and after
   BasicBlock* body_block = BasicBlock::Create(getGlobalContext(), "", _main);
   BasicBlock* post_block = BasicBlock::Create(getGlobalContext(), "", _main);
@@ -166,8 +166,8 @@ void CodeGenVisitor::Visit(BFLoop& s) {
   VisitNextASTNode(s);
 }
 
-Function* BuildProgram(ASTNode* s, llvm::Module* module, int store_size) {
-  CodeGenVisitor visitor(module, store_size);
+Function* BuildProgramFromAST(ASTNode* s, llvm::Module* module, int store_size) {
+  ASTCodeGenVisitor visitor(module, store_size);
   s->Accept(visitor);
   IRBuilder<> builder = visitor.GetLastBuilder();
   builder.CreateRetVoid();

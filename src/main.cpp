@@ -73,7 +73,7 @@ int main(int argc, char* argv[]) {
   Module* module = new Module("bfcode", getGlobalContext());
   ASTNode* prog = Parse(source_file);
   // TODO: better memory management - preferably allocate vector
-  Function* func = BuildProgram(prog, module, store_size);
+  Function* func = BuildProgramFromAST(prog, module, store_size);
 
   if (optimize_flag) {
     legacy::FunctionPassManager pm(module);
