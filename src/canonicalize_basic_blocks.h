@@ -7,12 +7,10 @@
 
 #include "canon_ir.h"
 
-// Basic block: sequence with no inputs, outputs, or loops
+// Basic block: sequence with only additions and ptr moves
 struct BBInfo {
   // offset -> add amount
   std::unordered_map<int, int> additions;
-  // op_offset -> (target_offset, multiplier)
-  std::unordered_map<int, std::pair<int, int>> multiplications;
   int ptr_mov = 0;
 };
 
@@ -27,6 +25,8 @@ class CanonicalizeVisitor : public CNodeVisitor {
   void Visit(CInput& n);
   void Visit(COutput& n);
   void Visit(CLoop& n);
+
+  CNode* GetProgram() { return _start_node; }
 
  private:
   void VisitNextCNode(CNode& n);

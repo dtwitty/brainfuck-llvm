@@ -20,6 +20,7 @@
 #include "canon_translate.h"
 #include "codegen_ast.h"
 #include "codegen_canon.h"
+#include "canonicalize_basic_blocks.h"
 
 using namespace std;
 using namespace llvm;
@@ -80,6 +81,7 @@ int main(int argc, char* argv[]) {
 
   if (optimize_flag) {
     CNode* canon_prog = TranslateASTToCanonIR(prog);
+    canon_prog = CanonicalizeBasicBlocks(canon_prog);
     func = BuildProgramFromCanon(canon_prog, module, store_size);
   } else {
     func = BuildProgramFromAST(prog, module, store_size);
