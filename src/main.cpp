@@ -16,7 +16,10 @@
 #include <llvm/Support/FileSystem.h>
 
 #include "parser.h"
+#include "canon_ir.h"
+#include "canon_translate.h"
 #include "codegen_ast.h"
+#include "codegen_canon.h"
 
 using namespace std;
 using namespace llvm;
@@ -73,29 +76,13 @@ int main(int argc, char* argv[]) {
   Module* module = new Module("bfcode", getGlobalContext());
   ASTNode* prog = Parse(source_file);
   // TODO: better memory management - preferably allocate vector
-  Function* func = BuildProgramFromAST(prog, module, store_size);
+  Function* func;
 
   if (optimize_flag) {
-    legacy::FunctionPassManager pm(module);
-
-    // Eliminate simple loops such as [>>++<<-]
-    pm.add(createInstructionCombiningPass()); // Cleanup for scalarrepl.
-    pm.add(createLICMPass());                 // Hoist loop invariants
-    pm.add(createIndVarSimplifyPass());       // Canonicalize indvars
-    pm.add(createLoopDeletionPass());         // Delete dead loops
-
-    // Simplify code
-    for(int repeat=0; repeat < 3; repeat++)
-    {
-      pm.add(createGVNPass());                  // Remove redundancies
-      pm.add(createSCCPPass());                 // Constant prop with SCCP
-      pm.add(createCFGSimplificationPass());    // Merge & remove BBs
-      pm.add(createInstructionCombiningPass());
-      pm.add(createAggressiveDCEPass());        // Delete dead instructions
-      pm.add(createCFGSimplificationPass());    // Merge & remove BBs
-      pm.add(createDeadStoreEliminationPass()); // Delete dead stores
-    }
-    pm.run(*func);
+    CNode* canon_prog = TranslateASTToCanonIR(prog);
+    func = BuildProgramFromCanon(canon_prog, module, store_size);
+  } else {
+    func = BuildProgramFromAST(prog, module, store_size);
   }
 
   if (output_flag) {
@@ -109,7 +96,7 @@ int main(int argc, char* argv[]) {
     InitializeNativeTarget();
     std::string error;
     ExecutionEngine* engine =
-      EngineBuilder(module).setErrorStr(&error).create();
+        EngineBuilder(module).setErrorStr(&error).create();
 
     if (!engine) {
       cout << "Engine not created: " << error << endl;

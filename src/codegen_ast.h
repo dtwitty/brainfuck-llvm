@@ -1,5 +1,5 @@
-#ifndef CODEGEN
-#define CODEGEN
+#ifndef CODEGEN_AST
+#define CODEGEN_AST
 
 #include <stack>
 
@@ -37,6 +37,6 @@ class ASTCodeGenVisitor : public ASTNodeVisitor {
 };
 
 llvm::Function* BuildProgramFromAST(ASTNode* s, llvm::Module* module,
-                             int store_size);
+                                    int store_size);
 
-#endif  // CODEGEN
+#endif  // CODEGEN_AST
