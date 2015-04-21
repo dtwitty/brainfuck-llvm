@@ -22,57 +22,55 @@ void CanonTranslateVisitor::AddSimpleStatement(CNode* n) {
   _blocks.top() = n;
 }
 
-CNode* CanonTranslateVisitor::GetProgram() {
-  return _start_node;
+CNode* CanonTranslateVisitor::GetProgram() { return _start_node; }
+
+void CanonTranslateVisitor::Visit(IncrPtr& n) {
+  AddSimpleStatement(new CPtrMov(1));
+  VisitNextASTNode(n);
 }
 
-  void CanonTranslateVisitor::Visit(IncrPtr & n) {
-    AddSimpleStatement(new CPtrMov(1));
-    VisitNextASTNode(n);
+void CanonTranslateVisitor::Visit(DecrPtr& n) {
+  AddSimpleStatement(new CPtrMov(-1));
+  VisitNextASTNode(n);
+}
+
+void CanonTranslateVisitor::Visit(IncrData& n) {
+  AddSimpleStatement(new CAdd(0, 1));
+  VisitNextASTNode(n);
+}
+
+void CanonTranslateVisitor::Visit(DecrData& n) {
+  AddSimpleStatement(new CAdd(0, -1));
+  VisitNextASTNode(n);
+}
+
+void CanonTranslateVisitor::Visit(GetInput& n) {
+  AddSimpleStatement(new CInput(0));
+  VisitNextASTNode(n);
+}
+
+void CanonTranslateVisitor::Visit(Output& n) {
+  AddSimpleStatement(new COutput(0));
+  VisitNextASTNode(n);
+}
+
+void CanonTranslateVisitor::Visit(BFLoop& n) {
+  CNode* body_node = new CNode();
+
+  _blocks.push(body_node);
+  n.GetBody()->Accept(*this);
+  _blocks.pop();
+
+  CLoop* loop = new CLoop();
+  loop->SetBody(body_node);
+  AddSimpleStatement(loop);
+  VisitNextASTNode(n);
+}
+
+CNode* TranslateASTToCanonIR(ASTNode* s) {
+  CanonTranslateVisitor visitor;
+  if (s) {
+    s->Accept(visitor);
   }
-
-  void CanonTranslateVisitor::Visit(DecrPtr & n) {
-    AddSimpleStatement(new CPtrMov(-1));
-    VisitNextASTNode(n);
-  }
-
-  void CanonTranslateVisitor::Visit(IncrData & n) {
-    AddSimpleStatement(new CAdd(0, 1));
-    VisitNextASTNode(n);
-  }
-
-  void CanonTranslateVisitor::Visit(DecrData & n) {
-    AddSimpleStatement(new CAdd(0, -1));
-    VisitNextASTNode(n);
-  }
-
-  void CanonTranslateVisitor::Visit(GetInput & n) {
-    AddSimpleStatement(new CInput(0));
-    VisitNextASTNode(n);
-  }
-
-  void CanonTranslateVisitor::Visit(Output & n) {
-    AddSimpleStatement(new COutput(0));
-    VisitNextASTNode(n);
-  }
-
-  void CanonTranslateVisitor::Visit(BFLoop & n) {
-    CNode* body_node = new CNode();
-
-    _blocks.push(body_node);
-    n.GetBody()->Accept(*this);
-    _blocks.pop();
-
-    CLoop* loop = new CLoop();
-    loop->SetBody(body_node);
-    AddSimpleStatement(loop);
-    VisitNextASTNode(n);
-  }
-
-  CNode* TranslateASTToCanonIR(ASTNode * s) {
-    CanonTranslateVisitor visitor;
-    if (s) {
-      s->Accept(visitor);
-    }
-    return visitor.GetProgram();
-  }
+  return visitor.GetProgram();
+}

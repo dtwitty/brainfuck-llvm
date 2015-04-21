@@ -16,7 +16,7 @@
 #include <llvm/Support/FileSystem.h>
 
 #include "parser.h"
-#include "ast_codegen.h"
+#include "codegen_ast.h"
 
 using namespace std;
 using namespace llvm;

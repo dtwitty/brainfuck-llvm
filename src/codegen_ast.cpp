@@ -8,7 +8,7 @@
 #include <llvm/IR/Module.h>
 
 #include "parser.h"
-#include "ast_codegen.h"
+#include "codegen_ast.h"
 
 using namespace llvm;
 
