@@ -21,6 +21,7 @@
 #include "codegen_ast.h"
 #include "codegen_canon.h"
 #include "canonicalize_basic_blocks.h"
+#include "print_canon.h"
 
 using namespace std;
 using namespace llvm;
@@ -31,6 +32,7 @@ void help(char* argv[]) {
   cerr << "Options:" << endl;
   cerr << "  -i          JIT compiles and runs the input file" << endl;
   cerr << "  -O          Apply optimizations (not implemented)" << endl;
+  cerr << "  -p          Print new program to stderr if O is specified" << endl;
   cerr << "  -o outfile  Outputs llvm code to outfile" << endl;
   cerr << "  -s size     Set the size of the bf tape (default 10000)" << endl;
   cerr << "  -h          Displays this help message" << endl;
@@ -40,12 +42,16 @@ int main(int argc, char* argv[]) {
   bool interpret_flag = false;
   bool output_flag = false;
   bool optimize_flag = false;
+  bool print_flag = false;
   char* output_file;
   unsigned store_size = 10000;
 
   char option_char;
-  while ((option_char = getopt(argc, argv, "s:iho:O")) != EOF) {
+  while ((option_char = getopt(argc, argv, "ps:iho:O")) != EOF) {
     switch (option_char) {
+      case 'p':
+        print_flag = true;
+        break;
       case 's':
         store_size = atoi(optarg);
         break;
@@ -82,6 +88,9 @@ int main(int argc, char* argv[]) {
   if (optimize_flag) {
     CNode* canon_prog = TranslateASTToCanonIR(prog);
     canon_prog = CanonicalizeBasicBlocks(canon_prog);
+    if (print_flag) {
+      PrintCanonIR(canon_prog);
+    }
     func = BuildProgramFromCanon(canon_prog, module, store_size);
   } else {
     func = BuildProgramFromAST(prog, module, store_size);
