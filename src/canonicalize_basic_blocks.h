@@ -3,7 +3,6 @@
 
 #include <stack>
 #include <unordered_map>
-#include <utility>
 
 #include "canon_ir.h"
 
