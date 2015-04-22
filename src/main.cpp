@@ -21,6 +21,7 @@
 #include "codegen_ast.h"
 #include "codegen_canon.h"
 #include "canonicalize_basic_blocks.h"
+#include "eliminate_simple_loops.h"
 #include "print_canon.h"
 
 using namespace std;
@@ -86,8 +87,10 @@ int main(int argc, char* argv[]) {
   Function* func;
 
   if (optimize_flag) {
+    // TODO this leaks the old program
     CNode* canon_prog = TranslateASTToCanonIR(prog);
     canon_prog = CanonicalizeBasicBlocks(canon_prog);
+    canon_prog = EliminateSimpleLoops(canon_prog);
     if (print_flag) {
       PrintCanonIR(canon_prog);
     }

@@ -90,12 +90,14 @@ void SimpleLoopElimVisitor::Visit(CLoop& n) {
   n.GetBody()->Accept(*this);
   _blocks.pop();
 
-  if (_is_simple && _ptr_mov == 0) {
+  if (_is_simple && _ptr_mov == 0 && _mult_map[0] == -1) {
     delete body_node;
     for (auto& pair : _mult_map) {
       int target_offset = pair.first;
       int amt = pair.second;
-      AddSimpleStatement(new CMul(0, target_offset, amt));
+      if (target_offset != 0) {
+        AddSimpleStatement(new CMul(0, target_offset, amt));
+      }
     }
     AddSimpleStatement(new CSet(0, 0));
   } else {
@@ -103,6 +105,7 @@ void SimpleLoopElimVisitor::Visit(CLoop& n) {
     loop->SetBody(body_node);
     AddSimpleStatement(loop);
   }
+  _is_simple = false;
   VisitNextCNode(n);
 }
 
