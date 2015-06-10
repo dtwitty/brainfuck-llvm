@@ -3,14 +3,15 @@
 #include <fstream>
 #include <getopt.h>
 #include <fcntl.h>
+#include <memory>
 
 #include <llvm/IR/Module.h>
 #include <llvm/IR/Function.h>
 #include <llvm/PassManager.h>
 #include <llvm/LinkAllPasses.h>
 #include <llvm/Support/TargetSelect.h>
-#include <llvm/ExecutionEngine/ExecutionEngine.h>
-#include <llvm/ExecutionEngine/JIT.h>
+#include "llvm/ExecutionEngine/ExecutionEngine.h"
+#include "llvm/ExecutionEngine/MCJIT.h"
 #include <llvm/Support/raw_ostream.h>
 #include <llvm/Bitcode/ReaderWriter.h>
 #include <llvm/Support/FileSystem.h>
@@ -32,7 +33,7 @@ void help(char* argv[]) {
   cerr << "Compiles or interprets brainfuck file" << endl;
   cerr << "Options:" << endl;
   cerr << "  -i          JIT compiles and runs the input file" << endl;
-  cerr << "  -O          Apply optimizations (not implemented)" << endl;
+  cerr << "  -O          Apply optimizations" << endl;
   cerr << "  -p          Print new program to stderr if O is specified" << endl;
   cerr << "  -o outfile  Outputs llvm code to outfile" << endl;
   cerr << "  -s size     Set the size of the bf tape (default 10000)" << endl;
@@ -100,17 +101,19 @@ int main(int argc, char* argv[]) {
   }
 
   if (output_flag) {
-    string error_str;
+    std::error_code error_code;
     llvm::sys::fs::OpenFlags flag(llvm::sys::fs::F_RW);
-    raw_fd_ostream out_stream(output_file, error_str, flag);
+    raw_fd_ostream out_stream(output_file, error_code, flag);
     module->print(out_stream, NULL);
   }
+
 
   if (interpret_flag) {
     InitializeNativeTarget();
     std::string error;
+    // Module must be unique
     ExecutionEngine* engine =
-        EngineBuilder(module).setErrorStr(&error).create();
+      EngineBuilder(std::unique_ptr<Module>(module)).setErrorStr(&error).create();
 
     if (!engine) {
       cout << "Engine not created: " << error << endl;
