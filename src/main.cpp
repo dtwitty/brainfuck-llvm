@@ -6,14 +6,13 @@
 #include <memory>
 #include <system_error>
 
-#include <llvm/IR/Module.h>
-#include <llvm/IR/Function.h>
-#include <llvm/Support/TargetSelect.h>
 #include "llvm/ExecutionEngine/ExecutionEngine.h"
 #include "llvm/ExecutionEngine/MCJIT.h"
-#include <llvm/Support/raw_ostream.h>
-#include <llvm/Bitcode/ReaderWriter.h>
-#include <llvm/Support/FileSystem.h>
+#include "llvm/ExecutionEngine/SectionMemoryManager.h"
+#include "llvm/IR/Function.h"
+#include "llvm/IR/Module.h"
+#include "llvm/Support/TargetSelect.h"
+#include "llvm/Support/raw_ostream.h"
 
 #include "parser.h"
 #include "canon_ir.h"
@@ -82,7 +81,8 @@ int main(int argc, char* argv[]) {
 
   ifstream source_file(argv[optind]);
   Module* module = new Module("bfcode", getGlobalContext());
-  ASTNode* prog = Parse(source_file);
+  std::unique_ptr<ASTNode> prog_ptr(Parse(source_file));
+  ASTNode* prog = prog_ptr.get();
   // TODO: better memory management - preferably allocate vector
   Function* func;
 
@@ -95,10 +95,12 @@ int main(int argc, char* argv[]) {
       PrintCanonIR(canon_prog);
     }
     func = BuildProgramFromCanon(canon_prog, module, store_size);
+    delete canon_prog;
   } else {
     if (print_flag) {
       CNode* canon_prog = TranslateASTToCanonIR(prog);
       PrintCanonIR(canon_prog);
+      delete canon_prog;
     }
     func = BuildProgramFromAST(prog, module, store_size);
   }
@@ -109,14 +111,19 @@ int main(int argc, char* argv[]) {
     module->print(out_stream, NULL);
   }
 
-
   if (interpret_flag) {
     InitializeNativeTarget();
+    InitializeNativeTargetAsmPrinter();
+    InitializeNativeTargetAsmParser();
     std::string error;
     // Module must be unique
     std::unique_ptr<Module> mod_ptr(module);
     ExecutionEngine* engine =
-      EngineBuilder(std::move(mod_ptr)).setErrorStr(&error).create();
+        EngineBuilder(std::move(mod_ptr))
+            .setErrorStr(&error)
+            .setMCJITMemoryManager(llvm::make_unique<SectionMemoryManager>())
+            .create();
+    engine->finalizeObject();
 
     if (!engine) {
       cout << "Engine not created: " << error << endl;
