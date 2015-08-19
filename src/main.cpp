@@ -4,11 +4,10 @@
 #include <getopt.h>
 #include <fcntl.h>
 #include <memory>
+#include <system_error>
 
 #include <llvm/IR/Module.h>
 #include <llvm/IR/Function.h>
-#include <llvm/PassManager.h>
-#include <llvm/LinkAllPasses.h>
 #include <llvm/Support/TargetSelect.h>
 #include "llvm/ExecutionEngine/ExecutionEngine.h"
 #include "llvm/ExecutionEngine/MCJIT.h"
@@ -101,9 +100,8 @@ int main(int argc, char* argv[]) {
   }
 
   if (output_flag) {
-    std::error_code error_code;
-    llvm::sys::fs::OpenFlags flag(llvm::sys::fs::F_RW);
-    raw_fd_ostream out_stream(output_file, error_code, flag);
+    std::error_code ec;
+    raw_fd_ostream out_stream(output_file, ec, llvm::sys::fs::F_RW);
     module->print(out_stream, NULL);
   }
 
@@ -112,8 +110,9 @@ int main(int argc, char* argv[]) {
     InitializeNativeTarget();
     std::string error;
     // Module must be unique
+    std::unique_ptr<Module> mod_ptr(module);
     ExecutionEngine* engine =
-      EngineBuilder(std::unique_ptr<Module>(module)).setErrorStr(&error).create();
+      EngineBuilder(std::move(mod_ptr)).setErrorStr(&error).create();
 
     if (!engine) {
       cout << "Engine not created: " << error << endl;

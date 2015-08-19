@@ -10,7 +10,7 @@ SRC_PATH = ./src
 # Space-separated pkg-config libraries used by this project
 LIBS =
 # General compiler flags
-COMPILE_FLAGS = $(shell llvm-config --cppflags) -std=c++11 -Wall -g 
+COMPILE_FLAGS = `llvm-config-3.6 --cxxflags` -std=c++11 -Wall -g
 # Additional release-specific flags
 RCOMPILE_FLAGS = -D NDEBUG
 # Additional debug-specific flags
@@ -18,7 +18,7 @@ DCOMPILE_FLAGS = -D DEBUG
 # Add additional include paths
 INCLUDES = -I $(SRC_PATH)/
 # General linker settings
-LINK_FLAGS = -rdynamic $(shell llvm-config --ldflags --system-libs --libs all) 
+LINK_FLAGS = -rdynamic `llvm-config-3.6 --ldflags --system-libs --libs core mcjit native`
 # Additional release-specific linker settings
 RLINK_FLAGS = 
 # Additional debug-specific linker settings

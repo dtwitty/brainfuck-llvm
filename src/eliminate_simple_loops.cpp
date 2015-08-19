@@ -103,6 +103,10 @@ void SimpleLoopElimVisitor::Visit(CLoop& n) {
   } else {
     CLoop* loop = new CLoop();
     loop->SetBody(body_node);
+    // Skip the dummy node if possible
+    if (body_node->GetNextCNode()) {
+      loop->SetBody(body_node->GetNextCNode());
+    }
     AddSimpleStatement(loop);
   }
   _is_simple = false;
