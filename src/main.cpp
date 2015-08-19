@@ -33,7 +33,7 @@ void help(char* argv[]) {
   cerr << "Options:" << endl;
   cerr << "  -i          JIT compiles and runs the input file" << endl;
   cerr << "  -O          Apply optimizations" << endl;
-  cerr << "  -p          Print new program to stderr if O is specified" << endl;
+  cerr << "  -p          Print new program to stderr" << endl;
   cerr << "  -o outfile  Outputs llvm code to outfile" << endl;
   cerr << "  -s size     Set the size of the bf tape (default 10000)" << endl;
   cerr << "  -h          Displays this help message" << endl;
@@ -96,6 +96,10 @@ int main(int argc, char* argv[]) {
     }
     func = BuildProgramFromCanon(canon_prog, module, store_size);
   } else {
+    if (print_flag) {
+      CNode* canon_prog = TranslateASTToCanonIR(prog);
+      PrintCanonIR(canon_prog);
+    }
     func = BuildProgramFromAST(prog, module, store_size);
   }
 
