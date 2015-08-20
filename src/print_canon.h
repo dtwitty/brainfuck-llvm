@@ -20,7 +20,7 @@ class CanonIRPRinterVisitor : public CNodeVisitor {
  private:
   void VisitNextCNode(CNode* n);
   void PrintWithIndent(const std::string& s);
-  int _indent_level;
+  int indent_level_;
 };
 
 void PrintCanonIR(CNode* n);

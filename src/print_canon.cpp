@@ -4,7 +4,7 @@
 #include "canon_ir.h"
 #include "print_canon.h"
 
-CanonIRPRinterVisitor::CanonIRPRinterVisitor() { _indent_level = 0; }
+CanonIRPRinterVisitor::CanonIRPRinterVisitor() { indent_level_ = 0; }
 
 void CanonIRPRinterVisitor::VisitNextCNode(CNode* n) {
   CNode* next = n->GetNextCNode();
@@ -14,7 +14,7 @@ void CanonIRPRinterVisitor::VisitNextCNode(CNode* n) {
 }
 
 void CanonIRPRinterVisitor::PrintWithIndent(const std::string& s) {
-  for (int i = 0; i < _indent_level; i++) {
+  for (int i = 0; i < indent_level_; i++) {
     std::cerr << "  ";
   }
   std::cerr << s << std::endl;
@@ -79,9 +79,9 @@ void CanonIRPRinterVisitor::Visit(COutput* n) {
 
 void CanonIRPRinterVisitor::Visit(CLoop* n) {
   PrintWithIndent("CLoop:");
-  _indent_level += 1;
+  indent_level_ += 1;
   n->GetBody()->Accept(*this);
-  _indent_level -= 1;
+  indent_level_ -= 1;
   VisitNextCNode(n);
 }
 

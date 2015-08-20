@@ -5,10 +5,10 @@
 #include "eliminate_simple_loops.h"
 
 SimpleLoopElimVisitor::SimpleLoopElimVisitor() {
-  _start_node = new CNode();
-  _blocks.push(_start_node);
-  _is_simple = false;
-  _ptr_mov = 0;
+  start_node_ = new CNode();
+  blocks_.push(start_node_);
+  is_simple_ = false;
+  ptr_mov_ = 0;
 }
 
 void SimpleLoopElimVisitor::VisitNextCNode(CNode* n) {
@@ -19,23 +19,23 @@ void SimpleLoopElimVisitor::VisitNextCNode(CNode* n) {
 }
 
 void SimpleLoopElimVisitor::AddSimpleStatement(CNode* n) {
-  CNode* block = _blocks.top();
+  CNode* block = blocks_.top();
   block->SetNextCNode(n);
-  _blocks.top() = n;
+  blocks_.top() = n;
 }
 
 void SimpleLoopElimVisitor::StartSimpleLoop() {
-  _is_simple = true;
-  _mult_map.clear();
-  _ptr_mov = 0;
+  is_simple_ = true;
+  mult_map_.clear();
+  ptr_mov_ = 0;
 }
 
 void SimpleLoopElimVisitor::Visit(CNode* n) { VisitNextCNode(n); }
 
 void SimpleLoopElimVisitor::Visit(CPtrMov* n) {
   int amt = n->GetAmt();
-  if (_is_simple) {
-    _ptr_mov += amt;
+  if (is_simple_) {
+    ptr_mov_ += amt;
   }
   AddSimpleStatement(new CPtrMov(amt));
   VisitNextCNode(n);
@@ -44,8 +44,8 @@ void SimpleLoopElimVisitor::Visit(CPtrMov* n) {
 void SimpleLoopElimVisitor::Visit(CAdd* n) {
   int offset = n->GetOffset();
   int amt = n->GetAmt();
-  if (_is_simple) {
-    _mult_map[offset + _ptr_mov] += amt;
+  if (is_simple_) {
+    mult_map_[offset + ptr_mov_] += amt;
   }
   AddSimpleStatement(new CAdd(offset, amt));
   VisitNextCNode(n);
@@ -55,7 +55,7 @@ void SimpleLoopElimVisitor::Visit(CMul* n) {
   int op_offset = n->GetOpOffset();
   int target_offset = n->GetTargetOffset();
   int amt = n->GetAmt();
-  _is_simple = false;
+  is_simple_ = false;
   AddSimpleStatement(new CMul(op_offset, target_offset, amt));
   VisitNextCNode(n);
 }
@@ -63,21 +63,21 @@ void SimpleLoopElimVisitor::Visit(CMul* n) {
 void SimpleLoopElimVisitor::Visit(CSet* n) {
   int offset = n->GetOffset();
   int amt = n->GetAmt();
-  _is_simple = false;
+  is_simple_ = false;
   AddSimpleStatement(new CSet(offset, amt));
   VisitNextCNode(n);
 }
 
 void SimpleLoopElimVisitor::Visit(CInput* n) {
   int offset = n->GetOffset();
-  _is_simple = false;
+  is_simple_ = false;
   AddSimpleStatement(new CInput(offset));
   VisitNextCNode(n);
 }
 
 void SimpleLoopElimVisitor::Visit(COutput* n) {
   int offset = n->GetOffset();
-  _is_simple = false;
+  is_simple_ = false;
   AddSimpleStatement(new COutput(offset));
   VisitNextCNode(n);
 }
@@ -86,13 +86,13 @@ void SimpleLoopElimVisitor::Visit(CLoop* n) {
   CNode* body_node = new CNode();
 
   StartSimpleLoop();
-  _blocks.push(body_node);
+  blocks_.push(body_node);
   n->GetBody()->Accept(*this);
-  _blocks.pop();
+  blocks_.pop();
 
-  if (_is_simple && _ptr_mov == 0 && _mult_map[0] == -1) {
+  if (is_simple_ && ptr_mov_ == 0 && mult_map_[0] == -1) {
     delete body_node;
-    for (auto& pair : _mult_map) {
+    for (auto& pair : mult_map_) {
       int target_offset = pair.first;
       int amt = pair.second;
       if (target_offset != 0) {
@@ -105,7 +105,7 @@ void SimpleLoopElimVisitor::Visit(CLoop* n) {
     loop->SetBody(body_node);
     AddSimpleStatement(loop);
   }
-  _is_simple = false;
+  is_simple_ = false;
   VisitNextCNode(n);
 }
 

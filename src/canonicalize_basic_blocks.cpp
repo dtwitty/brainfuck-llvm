@@ -6,24 +6,24 @@
 #include "canonicalize_basic_blocks.h"
 
 CanonicalizeVisitor::CanonicalizeVisitor() {
-  _start_node = new CNode();
-  _blocks.push(_start_node);
+  start_node_ = new CNode();
+  blocks_.push(start_node_);
   StartBB();
 }
 
-void CanonicalizeVisitor::StartBB() { _current_bb = {}; }
+void CanonicalizeVisitor::StartBB() { current_bb_ = {}; }
 
 void CanonicalizeVisitor::FinishBB() {
   // Add instrcutions for additions
-  for (auto& pair : _current_bb.additions) {
+  for (auto& pair : current_bb_.additions) {
     int offset = pair.first;
     int amt = pair.second;
     AddSimpleStatement(new CAdd(offset, amt));
   }
 
   // Add pointer move instruction
-  if (_current_bb.ptr_mov != 0) {
-    AddSimpleStatement(new CPtrMov(_current_bb.ptr_mov));
+  if (current_bb_.ptr_mov != 0) {
+    AddSimpleStatement(new CPtrMov(current_bb_.ptr_mov));
   }
 }
 
@@ -37,20 +37,20 @@ void CanonicalizeVisitor::VisitNextCNode(CNode* s) {
 }
 
 void CanonicalizeVisitor::AddSimpleStatement(CNode* n) {
-  CNode* block = _blocks.top();
+  CNode* block = blocks_.top();
   block->SetNextCNode(n);
-  _blocks.top() = n;
+  blocks_.top() = n;
 }
 
 void CanonicalizeVisitor::Visit(CNode* n) { VisitNextCNode(n); }
 
 void CanonicalizeVisitor::Visit(CPtrMov* n) {
-  _current_bb.ptr_mov += n->GetAmt();
+  current_bb_.ptr_mov += n->GetAmt();
   VisitNextCNode(n);
 }
 
 void CanonicalizeVisitor::Visit(CAdd* n) {
-  _current_bb.additions[n->GetOffset() + _current_bb.ptr_mov] += n->GetAmt();
+  current_bb_.additions[n->GetOffset() + current_bb_.ptr_mov] += n->GetAmt();
   VisitNextCNode(n);
 }
 
@@ -88,9 +88,9 @@ void CanonicalizeVisitor::Visit(CLoop* n) {
   CNode* body_node = new CNode();
 
   StartBB();
-  _blocks.push(body_node);
+  blocks_.push(body_node);
   n->GetBody()->Accept(*this);
-  _blocks.pop();
+  blocks_.pop();
 
   CLoop* loop = new CLoop();
   loop->SetBody(body_node);

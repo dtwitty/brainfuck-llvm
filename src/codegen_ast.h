@@ -22,17 +22,17 @@ class ASTCodeGenVisitor : public ASTNodeVisitor {
   void Visit(Output* s);
   void Visit(BFLoop* s);
 
-  llvm::Function* GetMain() { return _main; }
-  llvm::IRBuilder<> GetLastBuilder() { return _builders.top(); }
+  llvm::Function* GetMain() { return main_; }
+  llvm::IRBuilder<> GetLastBuilder() { return builders_.top(); }
 
  private:
   void VisitNextASTNode(ASTNode* s);
-  llvm::Module* _module;
-  llvm::Value* _ptr;
-  llvm::Function* _get_char;
-  llvm::Function* _put_char;
-  llvm::Function* _main;
-  std::stack<llvm::IRBuilder<>> _builders;
+  llvm::Module* module_;
+  llvm::Value* ptr_;
+  llvm::Function* get_char_;
+  llvm::Function* put_char_;
+  llvm::Function* main_;
+  std::stack<llvm::IRBuilder<>> builders_;
 };
 
 llvm::Function* BuildProgramFromAST(ASTNode* s, llvm::Module* module,

@@ -21,17 +21,17 @@ class SimpleLoopElimVisitor : public CNodeVisitor {
   void Visit(COutput* n);
   void Visit(CLoop* n);
 
-  CNode* GetProgram() { return _start_node; }
+  CNode* GetProgram() { return start_node_; }
 
  private:
   void VisitNextCNode(CNode* n);
   void AddSimpleStatement(CNode* n);
   void StartSimpleLoop();
-  std::stack<CNode*> _blocks;
-  CNode* _start_node;
-  bool _is_simple;
-  std::unordered_map<int, int> _mult_map;
-  int _ptr_mov;
+  std::stack<CNode*> blocks_;
+  CNode* start_node_;
+  bool is_simple_;
+  std::unordered_map<int, int> mult_map_;
+  int ptr_mov_;
 };
 
 CNode* EliminateSimpleLoops(CNode* n);

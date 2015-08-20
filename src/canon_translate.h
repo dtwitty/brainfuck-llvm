@@ -23,8 +23,8 @@ class CanonTranslateVisitor : public ASTNodeVisitor {
  private:
   void VisitNextASTNode(ASTNode* s);
   void AddSimpleStatement(CNode* n);
-  std::stack<CNode*> _blocks;
-  CNode* _start_node;
+  std::stack<CNode*> blocks_;
+  CNode* start_node_;
 };
 
 CNode* TranslateASTToCanonIR(ASTNode* s);

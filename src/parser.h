@@ -30,12 +30,12 @@ class ASTNodeVisitor {
 class ASTNode {
  public:
   virtual ~ASTNode() {}
-  ASTNode* GetNextASTNode() { return _next.get(); }
-  void SetNextASTNode(ASTNode* next) { _next.reset(next); }
+  ASTNode* GetNextASTNode() { return next_.get(); }
+  void SetNextASTNode(ASTNode* next) { next_.reset(next); }
   virtual void Accept(ASTNodeVisitor& visitor) { visitor.Visit(this); }
 
  private:
-  std::unique_ptr<ASTNode> _next;
+  std::unique_ptr<ASTNode> next_;
 };
 
 class IncrPtr : public ASTNode {
@@ -78,11 +78,11 @@ class BFLoop : public ASTNode {
  public:
   BFLoop() {}
   void Accept(ASTNodeVisitor& visitor) { visitor.Visit(this); }
-  ASTNode* GetBody() { return _body.get(); }
-  void SetBody(ASTNode* body) { _body.reset(body); }
+  ASTNode* GetBody() { return body_.get(); }
+  void SetBody(ASTNode* body) { body_.reset(body); }
 
  private:
-  std::unique_ptr<ASTNode> _body;
+  std::unique_ptr<ASTNode> body_;
 };
 
 ASTNode* Parse(std::istream& input);

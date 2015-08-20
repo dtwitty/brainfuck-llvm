@@ -3,8 +3,8 @@
 #include "parser.h"
 
 CanonTranslateVisitor::CanonTranslateVisitor() {
-  _start_node = new CNode();
-  _blocks.push(_start_node);
+  start_node_ = new CNode();
+  blocks_.push(start_node_);
 }
 
 void CanonTranslateVisitor::VisitNextASTNode(ASTNode* n) {
@@ -17,12 +17,12 @@ void CanonTranslateVisitor::VisitNextASTNode(ASTNode* n) {
 void CanonTranslateVisitor::Visit(ASTNode* n) { VisitNextASTNode(n); }
 
 void CanonTranslateVisitor::AddSimpleStatement(CNode* n) {
-  CNode* block = _blocks.top();
+  CNode* block = blocks_.top();
   block->SetNextCNode(n);
-  _blocks.top() = n;
+  blocks_.top() = n;
 }
 
-CNode* CanonTranslateVisitor::GetProgram() { return _start_node; }
+CNode* CanonTranslateVisitor::GetProgram() { return start_node_; }
 
 void CanonTranslateVisitor::Visit(IncrPtr* n) {
   AddSimpleStatement(new CPtrMov(1));
@@ -57,9 +57,9 @@ void CanonTranslateVisitor::Visit(Output* n) {
 void CanonTranslateVisitor::Visit(BFLoop* n) {
   CNode* body_node = new CNode();
 
-  _blocks.push(body_node);
+  blocks_.push(body_node);
   n->GetBody()->Accept(*this);
-  _blocks.pop();
+  blocks_.pop();
 
   CLoop* loop = new CLoop();
   loop->SetBody(body_node);

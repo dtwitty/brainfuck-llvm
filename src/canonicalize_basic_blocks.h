@@ -25,16 +25,16 @@ class CanonicalizeVisitor : public CNodeVisitor {
   void Visit(COutput* n);
   void Visit(CLoop* n);
 
-  CNode* GetProgram() { return _start_node; }
+  CNode* GetProgram() { return start_node_; }
 
  private:
   void VisitNextCNode(CNode* n);
   void AddSimpleStatement(CNode* n);
   void StartBB();
   void FinishBB();
-  std::stack<CNode*> _blocks;
-  BBInfo _current_bb = {};
-  CNode* _start_node;
+  std::stack<CNode*> blocks_;
+  BBInfo current_bb_ = {};
+  CNode* start_node_;
 };
 
 // Merge all adds, multiplies, and pointer movements
