@@ -1,6 +1,8 @@
 #ifndef PARSER
 #define PARSER
 
+#include <memory>
+
 #include "lexer.h"
 
 class ASTNode;
@@ -27,15 +29,13 @@ class ASTNodeVisitor {
 
 class ASTNode {
  public:
-  virtual ~ASTNode() {
-    if (_next) delete _next;
-  }
-  ASTNode* GetNextASTNode() { return _next; }
-  void SetNextASTNode(ASTNode* next) { _next = next; }
+  virtual ~ASTNode() {}
+  ASTNode* GetNextASTNode() { return _next.get(); }
+  void SetNextASTNode(ASTNode* next) { _next.reset(next); }
   virtual void Accept(ASTNodeVisitor& visitor) { visitor.Visit(*this); }
 
  private:
-  ASTNode* _next = NULL;
+  std::unique_ptr<ASTNode> _next;
 };
 
 class IncrPtr : public ASTNode {
@@ -78,11 +78,11 @@ class BFLoop : public ASTNode {
  public:
   BFLoop() {}
   void Accept(ASTNodeVisitor& visitor) { visitor.Visit(*this); }
-  ASTNode* GetBody() { return _body; }
-  void SetBody(ASTNode* body) { _body = body; }
+  ASTNode* GetBody() { return _body.get(); }
+  void SetBody(ASTNode* body) { _body.reset(body); }
 
  private:
-  ASTNode* _body;
+  std::unique_ptr<ASTNode> _body;
 };
 
 ASTNode* Parse(std::istream& input);

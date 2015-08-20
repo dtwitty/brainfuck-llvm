@@ -4,13 +4,13 @@
 #include "parser.h"
 
 class CNode;
-class CPtrMov;    // CPtrMov(x) -> ptr += x
-class CAdd;  // CAdd(off,x) -> M[ptr+off] += x
-class CMul;  // CMul(off,x,y) -> M[ptr+off+x] += M[ptr+off]*y
-class CSet;  // CSet(off,x) -> M[ptr+off] = x
-class CInput;     // CInput(off) -> M[ptr+off] = getchar()
-class COutput;    // COutput(off) -> putchar(M[ptr+off])
-class CLoop;      // CLoop(body) -> while(*ptr) {body}
+class CPtrMov;  // CPtrMov(x) -> ptr += x
+class CAdd;     // CAdd(off,x) -> M[ptr+off] += x
+class CMul;     // CMul(off,x,y) -> M[ptr+off+x] += M[ptr+off]*y
+class CSet;     // CSet(off,x) -> M[ptr+off] = x
+class CInput;   // CInput(off) -> M[ptr+off] = getchar()
+class COutput;  // COutput(off) -> putchar(M[ptr+off])
+class CLoop;    // CLoop(body) -> while(*ptr) {body}
 
 class CNodeVisitor {
  public:
@@ -27,15 +27,13 @@ class CNodeVisitor {
 
 class CNode {
  public:
-  virtual ~CNode() {
-    if (_next) delete _next;
-  }
-  CNode* GetNextCNode() { return _next; }
-  void SetNextCNode(CNode* next) { _next = next; }
+  virtual ~CNode() {}
+  CNode* GetNextCNode() { return _next.get(); }
+  void SetNextCNode(CNode* next) { _next.reset(next); }
   virtual void Accept(CNodeVisitor& visitor) { visitor.Visit(*this); }
 
  private:
-  CNode* _next = NULL;
+  std::unique_ptr<CNode> _next;
 };
 
 class CPtrMov : public CNode {
@@ -136,11 +134,11 @@ class CLoop : public CNode {
  public:
   CLoop() {}
   void Accept(CNodeVisitor& visitor) { visitor.Visit(*this); }
-  CNode* GetBody() { return _body; }
-  void SetBody(CNode* body) { _body = body; }
+  CNode* GetBody() { return _body.get(); }
+  void SetBody(CNode* body) { _body.reset(body); }
 
  private:
-  CNode* _body;
+  std::unique_ptr<CNode> _body;
 };
 
 #endif  // CANON_IR

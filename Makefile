@@ -10,7 +10,7 @@ SRC_PATH = ./src
 # Space-separated pkg-config libraries used by this project
 LIBS =
 # General compiler flags
-COMPILE_FLAGS = `llvm-config-3.6 --cxxflags` -std=c++11 -Wall -g -O3
+COMPILE_FLAGS = `llvm-config-3.6 --cxxflags` -std=c++11 -Wall -g
 # Additional release-specific flags
 RCOMPILE_FLAGS = -D NDEBUG
 # Additional debug-specific flags

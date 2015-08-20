@@ -80,29 +80,26 @@ int main(int argc, char* argv[]) {
   }
 
   ifstream source_file(argv[optind]);
-  Module* module = new Module("bfcode", getGlobalContext());
-  std::unique_ptr<ASTNode> prog_ptr(Parse(source_file));
-  ASTNode* prog = prog_ptr.get();
-  // TODO: better memory management - preferably allocate vector
+  std::unique_ptr<Module> module(new Module("bfcode", getGlobalContext()));
+  std::unique_ptr<ASTNode> prog(Parse(source_file));
+  // This function belongs to the module
   Function* func;
 
   if (optimize_flag) {
     // TODO this leaks the old program
-    CNode* canon_prog = TranslateASTToCanonIR(prog);
-    canon_prog = CanonicalizeBasicBlocks(canon_prog);
-    canon_prog = EliminateSimpleLoops(canon_prog);
+    std::unique_ptr<CNode> canon_prog(TranslateASTToCanonIR(prog.get()));
+    canon_prog.reset(CanonicalizeBasicBlocks(canon_prog.get()));
+    canon_prog.reset(EliminateSimpleLoops(canon_prog.get()));
     if (print_flag) {
-      PrintCanonIR(canon_prog);
+      PrintCanonIR(canon_prog.get());
     }
-    func = BuildProgramFromCanon(canon_prog, module, store_size);
-    delete canon_prog;
+    func = BuildProgramFromCanon(canon_prog.get(), module.get(), store_size);
   } else {
     if (print_flag) {
-      CNode* canon_prog = TranslateASTToCanonIR(prog);
-      PrintCanonIR(canon_prog);
-      delete canon_prog;
+      std::unique_ptr<CNode> canon_prog(TranslateASTToCanonIR(prog.get()));
+      PrintCanonIR(canon_prog.get());
     }
-    func = BuildProgramFromAST(prog, module, store_size);
+    func = BuildProgramFromAST(prog.get(), module.get(), store_size);
   }
 
   if (output_flag) {
@@ -116,16 +113,14 @@ int main(int argc, char* argv[]) {
     InitializeNativeTargetAsmPrinter();
     InitializeNativeTargetAsmParser();
     std::string error;
-    // Module must be unique
-    std::unique_ptr<Module> mod_ptr(module);
-    ExecutionEngine* engine =
-        EngineBuilder(std::move(mod_ptr))
+    std::unique_ptr<ExecutionEngine> engine(
+        EngineBuilder(std::move(module))
             .setErrorStr(&error)
             .setMCJITMemoryManager(llvm::make_unique<SectionMemoryManager>())
-            .create();
+            .create());
     engine->finalizeObject();
 
-    if (!engine) {
+    if (!engine.get()) {
       cout << "Engine not created: " << error << endl;
       return -1;
     }
