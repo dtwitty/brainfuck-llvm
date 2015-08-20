@@ -13,20 +13,20 @@
 class CNodeCodeGenVisitor : public CNodeVisitor {
  public:
   CNodeCodeGenVisitor(llvm::Module* module, int store_size);
-  void Visit(CNode& n);
-  void Visit(CPtrMov& n);
-  void Visit(CAdd& n);
-  void Visit(CMul& n);
-  void Visit(CSet& n);
-  void Visit(CInput& n);
-  void Visit(COutput& n);
-  void Visit(CLoop& n);
+  void Visit(CNode* n);
+  void Visit(CPtrMov* n);
+  void Visit(CAdd* n);
+  void Visit(CMul* n);
+  void Visit(CSet* n);
+  void Visit(CInput* n);
+  void Visit(COutput* n);
+  void Visit(CLoop* n);
 
   llvm::Function* GetMain() { return _main; }
   llvm::IRBuilder<> GetLastBuilder() { return _builders.top(); }
 
  private:
-  void VisitNextCNode(CNode& s);
+  void VisitNextCNode(CNode* s);
   llvm::Value* GetPtrOffset(int offset);
   llvm::Value* GetDataOffset(int offset);
   llvm::Module* _module;

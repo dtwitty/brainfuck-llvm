@@ -51,28 +51,28 @@ ASTCodeGenVisitor::ASTCodeGenVisitor(Module* module, int store_size) {
   builder.CreateMemSet(_ptr, zero, store_size, 0);
 }
 
-void ASTCodeGenVisitor::VisitNextASTNode(ASTNode& s) {
-  ASTNode* next = s.GetNextASTNode();
+void ASTCodeGenVisitor::VisitNextASTNode(ASTNode* s) {
+  ASTNode* next = s->GetNextASTNode();
   if (next) {
     next->Accept(*this);
   }
 }
 
-void ASTCodeGenVisitor::Visit(ASTNode& s) { VisitNextASTNode(s); }
+void ASTCodeGenVisitor::Visit(ASTNode* s) { VisitNextASTNode(s); }
 
-void ASTCodeGenVisitor::Visit(IncrPtr& s) {
+void ASTCodeGenVisitor::Visit(IncrPtr* s) {
   IRBuilder<> builder = _builders.top();
   _ptr = builder.CreateGEP(_ptr, one);
   VisitNextASTNode(s);
 }
 
-void ASTCodeGenVisitor::Visit(DecrPtr& s) {
+void ASTCodeGenVisitor::Visit(DecrPtr* s) {
   IRBuilder<> builder = _builders.top();
   _ptr = builder.CreateGEP(_ptr, neg_one);
   VisitNextASTNode(s);
 }
 
-void ASTCodeGenVisitor::Visit(IncrData& s) {
+void ASTCodeGenVisitor::Visit(IncrData* s) {
   IRBuilder<> builder = _builders.top();
   Value* ptr_val = builder.CreateLoad(_ptr);
   Value* result = builder.CreateAdd(ptr_val, one);
@@ -80,7 +80,7 @@ void ASTCodeGenVisitor::Visit(IncrData& s) {
   VisitNextASTNode(s);
 }
 
-void ASTCodeGenVisitor::Visit(DecrData& s) {
+void ASTCodeGenVisitor::Visit(DecrData* s) {
   IRBuilder<> builder = _builders.top();
   Value* ptr_val = builder.CreateLoad(_ptr);
   Value* result = builder.CreateAdd(ptr_val, neg_one);
@@ -88,21 +88,21 @@ void ASTCodeGenVisitor::Visit(DecrData& s) {
   VisitNextASTNode(s);
 }
 
-void ASTCodeGenVisitor::Visit(GetInput& s) {
+void ASTCodeGenVisitor::Visit(GetInput* s) {
   IRBuilder<> builder = _builders.top();
   Value* input = builder.CreateCall(_get_char);
   builder.CreateStore(input, _ptr);
   VisitNextASTNode(s);
 }
 
-void ASTCodeGenVisitor::Visit(Output& s) {
+void ASTCodeGenVisitor::Visit(Output* s) {
   IRBuilder<> builder = _builders.top();
   Value* output = builder.CreateLoad(_ptr);
   builder.CreateCall(_put_char, output);
   VisitNextASTNode(s);
 }
 
-void ASTCodeGenVisitor::Visit(BFLoop& s) {
+void ASTCodeGenVisitor::Visit(BFLoop* s) {
   // Create basic blocks for condition, body, and after
   BasicBlock* body_block = BasicBlock::Create(getGlobalContext(), "", _main);
   BasicBlock* post_block = BasicBlock::Create(getGlobalContext(), "", _main);
@@ -137,7 +137,7 @@ void ASTCodeGenVisitor::Visit(BFLoop& s) {
   _ptr = body_phi;
 
   // Process the loop body
-  s.GetBody()->Accept(*this);
+  s->GetBody()->Accept(*this);
 
   // Body could have progressed to a new block
   IRBuilder<> new_body_builder = _builders.top();
@@ -150,7 +150,7 @@ void ASTCodeGenVisitor::Visit(BFLoop& s) {
 
   // Update phi nodes
   body_phi->addIncoming(_ptr, new_body_block);
-  post_phi->addIncoming(_ptr, new_body_block); 
+  post_phi->addIncoming(_ptr, new_body_block);
 
   // Body block is now done
   _builders.pop();
@@ -159,7 +159,7 @@ void ASTCodeGenVisitor::Visit(BFLoop& s) {
   _builders.push(post_builder);
 
   // Set the pointer to the phi node
-  _ptr = post_phi; 
+  _ptr = post_phi;
 
   // Visist the rest of the program
   VisitNextASTNode(s);

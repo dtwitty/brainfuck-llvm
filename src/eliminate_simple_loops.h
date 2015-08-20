@@ -12,19 +12,19 @@
 class SimpleLoopElimVisitor : public CNodeVisitor {
  public:
   SimpleLoopElimVisitor();
-  void Visit(CNode& n);
-  void Visit(CPtrMov& n);
-  void Visit(CAdd& n);
-  void Visit(CMul& n);
-  void Visit(CSet& n);
-  void Visit(CInput& n);
-  void Visit(COutput& n);
-  void Visit(CLoop& n);
+  void Visit(CNode* n);
+  void Visit(CPtrMov* n);
+  void Visit(CAdd* n);
+  void Visit(CMul* n);
+  void Visit(CSet* n);
+  void Visit(CInput* n);
+  void Visit(COutput* n);
+  void Visit(CLoop* n);
 
   CNode* GetProgram() { return _start_node; }
 
  private:
-  void VisitNextCNode(CNode& n);
+  void VisitNextCNode(CNode* n);
   void AddSimpleStatement(CNode* n);
   void StartSimpleLoop();
   std::stack<CNode*> _blocks;

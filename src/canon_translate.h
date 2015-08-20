@@ -9,19 +9,19 @@
 class CanonTranslateVisitor : public ASTNodeVisitor {
  public:
   CanonTranslateVisitor();
-  void Visit(ASTNode& s);
-  void Visit(IncrPtr& s);
-  void Visit(DecrPtr& s);
-  void Visit(IncrData& s);
-  void Visit(DecrData& s);
-  void Visit(GetInput& s);
-  void Visit(Output& s);
-  void Visit(BFLoop& s);
+  void Visit(ASTNode* s);
+  void Visit(IncrPtr* s);
+  void Visit(DecrPtr* s);
+  void Visit(IncrData* s);
+  void Visit(DecrData* s);
+  void Visit(GetInput* s);
+  void Visit(Output* s);
+  void Visit(BFLoop* s);
 
   CNode* GetProgram();
 
  private:
-  void VisitNextASTNode(ASTNode& s);
+  void VisitNextASTNode(ASTNode* s);
   void AddSimpleStatement(CNode* n);
   std::stack<CNode*> _blocks;
   CNode* _start_node;

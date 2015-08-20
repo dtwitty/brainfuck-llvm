@@ -11,8 +11,8 @@ SimpleLoopElimVisitor::SimpleLoopElimVisitor() {
   _ptr_mov = 0;
 }
 
-void SimpleLoopElimVisitor::VisitNextCNode(CNode& n) {
-  CNode* next = n.GetNextCNode();
+void SimpleLoopElimVisitor::VisitNextCNode(CNode* n) {
+  CNode* next = n->GetNextCNode();
   if (next) {
     next->Accept(*this);
   }
@@ -30,10 +30,10 @@ void SimpleLoopElimVisitor::StartSimpleLoop() {
   _ptr_mov = 0;
 }
 
-void SimpleLoopElimVisitor::Visit(CNode& n) { VisitNextCNode(n); }
+void SimpleLoopElimVisitor::Visit(CNode* n) { VisitNextCNode(n); }
 
-void SimpleLoopElimVisitor::Visit(CPtrMov& n) {
-  int amt = n.GetAmt();
+void SimpleLoopElimVisitor::Visit(CPtrMov* n) {
+  int amt = n->GetAmt();
   if (_is_simple) {
     _ptr_mov += amt;
   }
@@ -41,9 +41,9 @@ void SimpleLoopElimVisitor::Visit(CPtrMov& n) {
   VisitNextCNode(n);
 }
 
-void SimpleLoopElimVisitor::Visit(CAdd& n) {
-  int offset = n.GetOffset();
-  int amt = n.GetAmt();
+void SimpleLoopElimVisitor::Visit(CAdd* n) {
+  int offset = n->GetOffset();
+  int amt = n->GetAmt();
   if (_is_simple) {
     _mult_map[offset + _ptr_mov] += amt;
   }
@@ -51,43 +51,43 @@ void SimpleLoopElimVisitor::Visit(CAdd& n) {
   VisitNextCNode(n);
 }
 
-void SimpleLoopElimVisitor::Visit(CMul& n) {
-  int op_offset = n.GetOpOffset();
-  int target_offset = n.GetTargetOffset();
-  int amt = n.GetAmt();
+void SimpleLoopElimVisitor::Visit(CMul* n) {
+  int op_offset = n->GetOpOffset();
+  int target_offset = n->GetTargetOffset();
+  int amt = n->GetAmt();
   _is_simple = false;
   AddSimpleStatement(new CMul(op_offset, target_offset, amt));
   VisitNextCNode(n);
 }
 
-void SimpleLoopElimVisitor::Visit(CSet& n) {
-  int offset = n.GetOffset();
-  int amt = n.GetAmt();
+void SimpleLoopElimVisitor::Visit(CSet* n) {
+  int offset = n->GetOffset();
+  int amt = n->GetAmt();
   _is_simple = false;
   AddSimpleStatement(new CSet(offset, amt));
   VisitNextCNode(n);
 }
 
-void SimpleLoopElimVisitor::Visit(CInput& n) {
-  int offset = n.GetOffset();
+void SimpleLoopElimVisitor::Visit(CInput* n) {
+  int offset = n->GetOffset();
   _is_simple = false;
   AddSimpleStatement(new CInput(offset));
   VisitNextCNode(n);
 }
 
-void SimpleLoopElimVisitor::Visit(COutput& n) {
-  int offset = n.GetOffset();
+void SimpleLoopElimVisitor::Visit(COutput* n) {
+  int offset = n->GetOffset();
   _is_simple = false;
   AddSimpleStatement(new COutput(offset));
   VisitNextCNode(n);
 }
 
-void SimpleLoopElimVisitor::Visit(CLoop& n) {
+void SimpleLoopElimVisitor::Visit(CLoop* n) {
   CNode* body_node = new CNode();
 
   StartSimpleLoop();
   _blocks.push(body_node);
-  n.GetBody()->Accept(*this);
+  n->GetBody()->Accept(*this);
   _blocks.pop();
 
   if (_is_simple && _ptr_mov == 0 && _mult_map[0] == -1) {

@@ -13,20 +13,20 @@
 class ASTCodeGenVisitor : public ASTNodeVisitor {
  public:
   ASTCodeGenVisitor(llvm::Module* module, int store_size);
-  void Visit(ASTNode& s);
-  void Visit(IncrPtr& s);
-  void Visit(DecrPtr& s);
-  void Visit(IncrData& s);
-  void Visit(DecrData& s);
-  void Visit(GetInput& s);
-  void Visit(Output& s);
-  void Visit(BFLoop& s);
+  void Visit(ASTNode* s);
+  void Visit(IncrPtr* s);
+  void Visit(DecrPtr* s);
+  void Visit(IncrData* s);
+  void Visit(DecrData* s);
+  void Visit(GetInput* s);
+  void Visit(Output* s);
+  void Visit(BFLoop* s);
 
   llvm::Function* GetMain() { return _main; }
   llvm::IRBuilder<> GetLastBuilder() { return _builders.top(); }
 
  private:
-  void VisitNextASTNode(ASTNode& s);
+  void VisitNextASTNode(ASTNode* s);
   llvm::Module* _module;
   llvm::Value* _ptr;
   llvm::Function* _get_char;

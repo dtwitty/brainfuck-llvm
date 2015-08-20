@@ -27,8 +27,8 @@ void CanonicalizeVisitor::FinishBB() {
   }
 }
 
-void CanonicalizeVisitor::VisitNextCNode(CNode& s) {
-  CNode* next = s.GetNextCNode();
+void CanonicalizeVisitor::VisitNextCNode(CNode* s) {
+  CNode* next = s->GetNextCNode();
   if (next) {
     next->Accept(*this);
   } else {
@@ -42,54 +42,54 @@ void CanonicalizeVisitor::AddSimpleStatement(CNode* n) {
   _blocks.top() = n;
 }
 
-void CanonicalizeVisitor::Visit(CNode& n) { VisitNextCNode(n); }
+void CanonicalizeVisitor::Visit(CNode* n) { VisitNextCNode(n); }
 
-void CanonicalizeVisitor::Visit(CPtrMov& n) {
-  _current_bb.ptr_mov += n.GetAmt();
+void CanonicalizeVisitor::Visit(CPtrMov* n) {
+  _current_bb.ptr_mov += n->GetAmt();
   VisitNextCNode(n);
 }
 
-void CanonicalizeVisitor::Visit(CAdd& n) {
-  _current_bb.additions[n.GetOffset() + _current_bb.ptr_mov] += n.GetAmt();
+void CanonicalizeVisitor::Visit(CAdd* n) {
+  _current_bb.additions[n->GetOffset() + _current_bb.ptr_mov] += n->GetAmt();
   VisitNextCNode(n);
 }
 
-void CanonicalizeVisitor::Visit(CMul& n) {
+void CanonicalizeVisitor::Visit(CMul* n) {
   FinishBB();
   AddSimpleStatement(
-      new CMul(n.GetOpOffset(), n.GetTargetOffset(), n.GetAmt()));
+      new CMul(n->GetOpOffset(), n->GetTargetOffset(), n->GetAmt()));
   StartBB();
   VisitNextCNode(n);
 }
 
-void CanonicalizeVisitor::Visit(CSet& n) {
+void CanonicalizeVisitor::Visit(CSet* n) {
   FinishBB();
-  AddSimpleStatement(new CSet(n.GetOffset(), n.GetAmt()));
+  AddSimpleStatement(new CSet(n->GetOffset(), n->GetAmt()));
   StartBB();
   VisitNextCNode(n);
 }
 
-void CanonicalizeVisitor::Visit(CInput& n) {
+void CanonicalizeVisitor::Visit(CInput* n) {
   FinishBB();
-  AddSimpleStatement(new CInput(n.GetOffset()));
+  AddSimpleStatement(new CInput(n->GetOffset()));
   StartBB();
   VisitNextCNode(n);
 }
 
-void CanonicalizeVisitor::Visit(COutput& n) {
+void CanonicalizeVisitor::Visit(COutput* n) {
   FinishBB();
-  AddSimpleStatement(new COutput(n.GetOffset()));
+  AddSimpleStatement(new COutput(n->GetOffset()));
   StartBB();
   VisitNextCNode(n);
 }
 
-void CanonicalizeVisitor::Visit(CLoop& n) {
+void CanonicalizeVisitor::Visit(CLoop* n) {
   FinishBB();
   CNode* body_node = new CNode();
 
   StartBB();
   _blocks.push(body_node);
-  n.GetBody()->Accept(*this);
+  n->GetBody()->Accept(*this);
   _blocks.pop();
 
   CLoop* loop = new CLoop();

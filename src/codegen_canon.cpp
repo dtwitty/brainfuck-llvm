@@ -46,8 +46,8 @@ CNodeCodeGenVisitor::CNodeCodeGenVisitor(Module* module, int store_size) {
   builder.CreateMemSet(_ptr, ConstantInt::get(CELL_TYPE, 0), store_size, 0);
 }
 
-void CNodeCodeGenVisitor::VisitNextCNode(CNode& s) {
-  CNode* next = s.GetNextCNode();
+void CNodeCodeGenVisitor::VisitNextCNode(CNode* s) {
+  CNode* next = s->GetNextCNode();
   if (next) {
     next->Accept(*this);
   }
@@ -61,33 +61,33 @@ Value* CNodeCodeGenVisitor::GetDataOffset(int offset) {
   return ConstantInt::get(CELL_TYPE, offset);
 }
 
-void CNodeCodeGenVisitor::Visit(CNode& s) { VisitNextCNode(s); }
+void CNodeCodeGenVisitor::Visit(CNode* s) { VisitNextCNode(s); }
 
-void CNodeCodeGenVisitor::Visit(CPtrMov& s) {
+void CNodeCodeGenVisitor::Visit(CPtrMov* s) {
   IRBuilder<> builder = _builders.top();
-  _ptr = builder.CreateGEP(_ptr, GetPtrOffset(s.GetAmt()));
+  _ptr = builder.CreateGEP(_ptr, GetPtrOffset(s->GetAmt()));
   VisitNextCNode(s);
 }
 
-void CNodeCodeGenVisitor::Visit(CAdd& s) {
+void CNodeCodeGenVisitor::Visit(CAdd* s) {
   IRBuilder<> builder = _builders.top();
 
-  Value* offset_ptr = builder.CreateGEP(_ptr, GetPtrOffset(s.GetOffset()));
+  Value* offset_ptr = builder.CreateGEP(_ptr, GetPtrOffset(s->GetOffset()));
   Value* offset_val = builder.CreateLoad(offset_ptr);
 
-  Value* add_val = GetDataOffset(s.GetAmt());
+  Value* add_val = GetDataOffset(s->GetAmt());
   Value* result = builder.CreateAdd(offset_val, add_val);
 
   builder.CreateStore(result, offset_ptr);
   VisitNextCNode(s);
 }
 
-void CNodeCodeGenVisitor::Visit(CMul& s) {
+void CNodeCodeGenVisitor::Visit(CMul* s) {
   IRBuilder<> builder = _builders.top();
   
-  int op_offset = s.GetOpOffset();
-  int target_offset = s.GetTargetOffset();
-  int amt = s.GetAmt();
+  int op_offset = s->GetOpOffset();
+  int target_offset = s->GetTargetOffset();
+  int amt = s->GetAmt();
 
   Value* op_offset_ptr = builder.CreateGEP(_ptr, GetPtrOffset(op_offset));
   Value* target_offset_ptr =
@@ -103,36 +103,36 @@ void CNodeCodeGenVisitor::Visit(CMul& s) {
   VisitNextCNode(s);
 }
 
-void CNodeCodeGenVisitor::Visit(CSet& s) {
+void CNodeCodeGenVisitor::Visit(CSet* s) {
   IRBuilder<> builder = _builders.top();
 
-  Value* offset_ptr = builder.CreateGEP(_ptr, GetPtrOffset(s.GetOffset()));
-  Value* set_val = GetDataOffset(s.GetAmt());
+  Value* offset_ptr = builder.CreateGEP(_ptr, GetPtrOffset(s->GetOffset()));
+  Value* set_val = GetDataOffset(s->GetAmt());
   builder.CreateStore(set_val, offset_ptr);
   VisitNextCNode(s);
 }
 
-void CNodeCodeGenVisitor::Visit(CInput& s) {
+void CNodeCodeGenVisitor::Visit(CInput* s) {
   IRBuilder<> builder = _builders.top();
 
-  Value* ptr_offset = builder.CreateGEP(_ptr, GetPtrOffset(s.GetOffset()));
+  Value* ptr_offset = builder.CreateGEP(_ptr, GetPtrOffset(s->GetOffset()));
   Value* input = builder.CreateCall(_get_char);
 
   builder.CreateStore(input, ptr_offset);
   VisitNextCNode(s);
 }
 
-void CNodeCodeGenVisitor::Visit(COutput& s) {
+void CNodeCodeGenVisitor::Visit(COutput* s) {
   IRBuilder<> builder = _builders.top();
 
-  Value* offset_ptr = builder.CreateGEP(_ptr, GetPtrOffset(s.GetOffset()));
+  Value* offset_ptr = builder.CreateGEP(_ptr, GetPtrOffset(s->GetOffset()));
   Value* ptr_value = builder.CreateLoad(offset_ptr);
 
   builder.CreateCall(_put_char, ptr_value);
   VisitNextCNode(s);
 }
 
-void CNodeCodeGenVisitor::Visit(CLoop& s) {
+void CNodeCodeGenVisitor::Visit(CLoop* s) {
   // Create basic blocks for condition, body, and after
   BasicBlock* body_block = BasicBlock::Create(getGlobalContext(), "", _main);
   BasicBlock* post_block = BasicBlock::Create(getGlobalContext(), "", _main);
@@ -167,7 +167,7 @@ void CNodeCodeGenVisitor::Visit(CLoop& s) {
   _ptr = body_phi;
 
   // Process the loop body
-  s.GetBody()->Accept(*this);
+  s->GetBody()->Accept(*this);
 
   // Body could have progressed to a new block
   IRBuilder<> new_body_builder = _builders.top();

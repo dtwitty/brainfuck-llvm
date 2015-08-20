@@ -15,14 +15,14 @@ class CLoop;    // CLoop(body) -> while(*ptr) {body}
 class CNodeVisitor {
  public:
   virtual ~CNodeVisitor() {}
-  virtual void Visit(CNode& n) = 0;
-  virtual void Visit(CPtrMov& n) = 0;
-  virtual void Visit(CAdd& n) = 0;
-  virtual void Visit(CMul& n) = 0;
-  virtual void Visit(CSet& n) = 0;
-  virtual void Visit(CInput& n) = 0;
-  virtual void Visit(COutput& n) = 0;
-  virtual void Visit(CLoop& n) = 0;
+  virtual void Visit(CNode* n) = 0;
+  virtual void Visit(CPtrMov* n) = 0;
+  virtual void Visit(CAdd* n) = 0;
+  virtual void Visit(CMul* n) = 0;
+  virtual void Visit(CSet* n) = 0;
+  virtual void Visit(CInput* n) = 0;
+  virtual void Visit(COutput* n) = 0;
+  virtual void Visit(CLoop* n) = 0;
 };
 
 class CNode {
@@ -30,7 +30,7 @@ class CNode {
   virtual ~CNode() {}
   CNode* GetNextCNode() { return _next.get(); }
   void SetNextCNode(CNode* next) { _next.reset(next); }
-  virtual void Accept(CNodeVisitor& visitor) { visitor.Visit(*this); }
+  virtual void Accept(CNodeVisitor& visitor) { visitor.Visit(this); }
 
  private:
   std::unique_ptr<CNode> _next;
@@ -40,7 +40,7 @@ class CPtrMov : public CNode {
  public:
   CPtrMov() {}
   CPtrMov(int amt) { _amt = amt; }
-  void Accept(CNodeVisitor& visitor) { visitor.Visit(*this); }
+  void Accept(CNodeVisitor& visitor) { visitor.Visit(this); }
   int GetAmt() { return _amt; }
   void SetAmt(int amt) { _amt = amt; }
 
@@ -55,7 +55,7 @@ class CAdd : public CNode {
     _offset = offset;
     _amt = amt;
   }
-  void Accept(CNodeVisitor& visitor) { visitor.Visit(*this); }
+  void Accept(CNodeVisitor& visitor) { visitor.Visit(this); }
   int GetOffset() { return _offset; }
   int GetAmt() { return _amt; }
   void SetOffset(int offset) { _offset = offset; }
@@ -74,7 +74,7 @@ class CMul : public CNode {
     _target_offset = target_offset;
     _amt = amt;
   }
-  void Accept(CNodeVisitor& visitor) { visitor.Visit(*this); }
+  void Accept(CNodeVisitor& visitor) { visitor.Visit(this); }
   int GetOpOffset() { return _op_offset; }
   int GetTargetOffset() { return _target_offset; }
   int GetAmt() { return _amt; }
@@ -95,7 +95,7 @@ class CSet : public CNode {
     _offset = offset;
     _amt = amt;
   }
-  void Accept(CNodeVisitor& visitor) { visitor.Visit(*this); }
+  void Accept(CNodeVisitor& visitor) { visitor.Visit(this); }
   int GetOffset() { return _offset; }
   int GetAmt() { return _amt; }
   void SetOffset(int offset) { _offset = offset; }
@@ -110,7 +110,7 @@ class CInput : public CNode {
  public:
   CInput() {}
   CInput(int offset) { _offset = offset; }
-  void Accept(CNodeVisitor& visitor) { visitor.Visit(*this); }
+  void Accept(CNodeVisitor& visitor) { visitor.Visit(this); }
   int GetOffset() { return _offset; }
   void SetOffset(int offset) { _offset = offset; }
 
@@ -122,7 +122,7 @@ class COutput : public CNode {
  public:
   COutput() {}
   COutput(int offset) { _offset = offset; }
-  void Accept(CNodeVisitor& visitor) { visitor.Visit(*this); }
+  void Accept(CNodeVisitor& visitor) { visitor.Visit(this); }
   int GetOffset() { return _offset; }
   void SetOffset(int offset) { _offset = offset; }
 
@@ -133,7 +133,7 @@ class COutput : public CNode {
 class CLoop : public CNode {
  public:
   CLoop() {}
-  void Accept(CNodeVisitor& visitor) { visitor.Visit(*this); }
+  void Accept(CNodeVisitor& visitor) { visitor.Visit(this); }
   CNode* GetBody() { return _body.get(); }
   void SetBody(CNode* body) { _body.reset(body); }
 
