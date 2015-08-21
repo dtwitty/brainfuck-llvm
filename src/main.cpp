@@ -120,16 +120,16 @@ int main(int argc, char* argv[]) {
       pass_manager.add(
           createInstructionCombiningPass());  // Cleanup for scalarrepl.
       pass_manager.add(createLICMPass());     // Hoist loop invariants
-      pass_manager.add(createLoopStrengthReducePass()); // Reduce strength
-      pass_manager.add(createIndVarSimplifyPass());  // Canonicalize indvars
-      pass_manager.add(createLoopDeletionPass());    // Delete dead loops
-      pass_manager.add(createGVNPass());             // Remove redundancies
-      pass_manager.add(createSCCPPass());            // Constant prop with SCCP
+      pass_manager.add(createLoopStrengthReducePass());  // Reduce strength
+      pass_manager.add(createIndVarSimplifyPass());      // Canonicalize indvars
+      pass_manager.add(createLoopDeletionPass());        // Delete dead loops
+      pass_manager.add(createGVNPass());                 // Remove redundancies
+      pass_manager.add(createSCCPPass());  // Constant prop with SCCP
       pass_manager.add(createCFGSimplificationPass());  // Merge & remove BBs
       pass_manager.add(createInstructionCombiningPass());
       pass_manager.add(
           createConstantPropagationPass());         // Propagate conditionals
-      pass_manager.add(createGVNPass());             // Remove redundancies
+      pass_manager.add(createGVNPass());            // Remove redundancies
       pass_manager.add(createAggressiveDCEPass());  // Delete dead instructions
       pass_manager.add(createCFGSimplificationPass());     // Merge & remove BBs
       pass_manager.add(createDeadStoreEliminationPass());  // Delete dead stores

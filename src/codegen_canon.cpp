@@ -84,7 +84,7 @@ void CNodeCodeGenVisitor::Visit(CAdd* s) {
 
 void CNodeCodeGenVisitor::Visit(CMul* s) {
   IRBuilder<> builder = builders_.top();
-  
+
   int op_offset = s->GetOpOffset();
   int target_offset = s->GetTargetOffset();
   int amt = s->GetAmt();
@@ -93,7 +93,7 @@ void CNodeCodeGenVisitor::Visit(CMul* s) {
   Value* target_offset_ptr =
       builder.CreateGEP(ptr_, GetPtrOffset(target_offset));
   Value* mul_val = GetDataOffset(amt);
-  
+
   Value* op_val = builder.CreateLoad(op_offset_ptr);
   Value* target_val = builder.CreateLoad(target_offset_ptr);
   Value* mul_result = builder.CreateMul(op_val, mul_val);

@@ -24,7 +24,7 @@ ASTCodeGenVisitor::ASTCodeGenVisitor(Module* module, int store_size) {
 
   // Define function for getting input
   get_char_ =
-    cast<Function>(module_->getOrInsertFunction("getchar", CELL_TYPE, NULL));
+      cast<Function>(module_->getOrInsertFunction("getchar", CELL_TYPE, NULL));
   get_char_->setCallingConv(CallingConv::C);
 
   // Define function for printing
@@ -33,8 +33,7 @@ ASTCodeGenVisitor::ASTCodeGenVisitor(Module* module, int store_size) {
   put_char_->setCallingConv(CallingConv::C);
 
   // Define main function
-  main_ =
-    cast<Function>(module_->getOrInsertFunction("main", VOID_TYPE, NULL));
+  main_ = cast<Function>(module_->getOrInsertFunction("main", VOID_TYPE, NULL));
   main_->setCallingConv(CallingConv::C);
 
   // Push the main block onto a stack of loops
@@ -44,8 +43,7 @@ ASTCodeGenVisitor::ASTCodeGenVisitor(Module* module, int store_size) {
   Value* store_size_v = ConstantInt::get(INDEX_TYPE, store_size);
 
   // Allocate the data pointer, an array of size store_size
-  ptr_ =
-    builder.CreateAlloca(CELL_TYPE, store_size_v);
+  ptr_ = builder.CreateAlloca(CELL_TYPE, store_size_v);
 
   // Zero-out the data array
   builder.CreateMemSet(ptr_, zero, store_size, 0);
@@ -165,7 +163,8 @@ void ASTCodeGenVisitor::Visit(BFLoop* s) {
   VisitNextASTNode(s);
 }
 
-Function* BuildProgramFromAST(ASTNode* s, llvm::Module* module, int store_size) {
+Function* BuildProgramFromAST(ASTNode* s, llvm::Module* module,
+                              int store_size) {
   ASTCodeGenVisitor visitor(module, store_size);
   s->Accept(visitor);
   IRBuilder<> builder = visitor.GetLastBuilder();

@@ -12,7 +12,7 @@ void ParserError(const std::string& error) {
 
 ASTNode* Parse(std::istream& input) {
   Token tok;
-  ASTNode* next, *loop_body, *first = new ASTNode();
+  ASTNode *next, *loop_body, *first = new ASTNode();
   BFLoop* next_loop;
   std::stack<ASTNode*> blocks;
   blocks.push(first);
