@@ -6,13 +6,18 @@
 #include <memory>
 #include <system_error>
 
+#include "llvm/Analysis/Passes.h"
 #include "llvm/ExecutionEngine/ExecutionEngine.h"
 #include "llvm/ExecutionEngine/MCJIT.h"
 #include "llvm/ExecutionEngine/SectionMemoryManager.h"
 #include "llvm/IR/Function.h"
+#include "llvm/IR/LLVMContext.h"
 #include "llvm/IR/Module.h"
+#include "llvm/IR/Verifier.h"
+#include "llvm/PassManager.h"
 #include "llvm/Support/TargetSelect.h"
 #include "llvm/Support/raw_ostream.h"
+#include "llvm/Transforms/Scalar.h"
 
 #include "parser.h"
 #include "canon_ir.h"
@@ -31,7 +36,8 @@ void help(char* argv[]) {
   cerr << "Compiles or interprets brainfuck file" << endl;
   cerr << "Options:" << endl;
   cerr << "  -i          JIT compiles and runs the input file" << endl;
-  cerr << "  -O          Apply optimizations" << endl;
+  cerr << "  -O          Apply BF-specific optimizations" << endl;
+  cerr << "  -L          Apply LLVM optimizations" << endl;
   cerr << "  -p          Print new program to stderr" << endl;
   cerr << "  -o outfile  Outputs llvm code to outfile" << endl;
   cerr << "  -s size     Set the size of the bf tape (default 10000)" << endl;
@@ -41,13 +47,14 @@ void help(char* argv[]) {
 int main(int argc, char* argv[]) {
   bool interpret_flag = false;
   bool output_flag = false;
-  bool optimize_flag = false;
+  bool optimize_bf_flag = false;
+  bool optimize_llvm_flag = false;
   bool print_flag = false;
   char* output_file;
   unsigned store_size = 10000;
 
   char option_char;
-  while ((option_char = getopt(argc, argv, "ps:iho:O")) != EOF) {
+  while ((option_char = getopt(argc, argv, "ps:iho:OL")) != EOF) {
     switch (option_char) {
       case 'p':
         print_flag = true;
@@ -66,7 +73,10 @@ int main(int argc, char* argv[]) {
         help(argv);
         return 0;
       case 'O':
-        optimize_flag = true;
+        optimize_bf_flag = true;
+        break;
+      case 'L':
+        optimize_llvm_flag = true;
         break;
       default:
         help(argv);
@@ -85,8 +95,7 @@ int main(int argc, char* argv[]) {
   // This function belongs to the module
   Function* func;
 
-  if (optimize_flag) {
-    // TODO this leaks the old program
+  if (optimize_bf_flag) {
     std::unique_ptr<CNode> canon_prog(TranslateASTToCanonIR(prog.get()));
     canon_prog.reset(CanonicalizeBasicBlocks(canon_prog.get()));
     canon_prog.reset(EliminateSimpleLoops(canon_prog.get()));
@@ -94,12 +103,40 @@ int main(int argc, char* argv[]) {
       PrintCanonIR(canon_prog.get());
     }
     func = BuildProgramFromCanon(canon_prog.get(), module.get(), store_size);
+
   } else {
     if (print_flag) {
       std::unique_ptr<CNode> canon_prog(TranslateASTToCanonIR(prog.get()));
       PrintCanonIR(canon_prog.get());
     }
     func = BuildProgramFromAST(prog.get(), module.get(), store_size);
+  }
+
+  if (optimize_llvm_flag) {
+    FunctionPassManager pass_manager(module.get());
+    pass_manager.add(createVerifierPass());
+    pass_manager.add(new DataLayoutPass());
+    for (int repeat = 0; repeat < 5; repeat++) {
+      pass_manager.add(
+          createInstructionCombiningPass());  // Cleanup for scalarrepl.
+      pass_manager.add(createLICMPass());     // Hoist loop invariants
+      pass_manager.add(createLoopStrengthReducePass()); // Reduce strength
+      pass_manager.add(createIndVarSimplifyPass());  // Canonicalize indvars
+      pass_manager.add(createLoopDeletionPass());    // Delete dead loops
+      pass_manager.add(createGVNPass());             // Remove redundancies
+      pass_manager.add(createSCCPPass());            // Constant prop with SCCP
+      pass_manager.add(createCFGSimplificationPass());  // Merge & remove BBs
+      pass_manager.add(createInstructionCombiningPass());
+      pass_manager.add(
+          createConstantPropagationPass());         // Propagate conditionals
+      pass_manager.add(createGVNPass());             // Remove redundancies
+      pass_manager.add(createAggressiveDCEPass());  // Delete dead instructions
+      pass_manager.add(createCFGSimplificationPass());     // Merge & remove BBs
+      pass_manager.add(createDeadStoreEliminationPass());  // Delete dead stores
+    }
+
+    pass_manager.doInitialization();
+    pass_manager.run(*func);
   }
 
   if (output_flag) {
